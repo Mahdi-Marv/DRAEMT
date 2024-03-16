@@ -48,12 +48,13 @@ class MVTecDRAEMTestDataset(Dataset):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
         if mask_path is not None:
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+            print(mask_path)
         else:
             mask = np.zeros((image.shape[0], image.shape[1]))
         if self.resize_shape is not None:
             image = cv2.resize(image, dsize=(self.resize_shape, self.resize_shape))
             mask = cv2.resize(mask, dsize=(256, 256))
-            print(mask)
+            # print(mask)
 
         image = image / 255.0
         mask = mask / 255.0
