@@ -60,7 +60,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
     def __getitem__(self, idx):
         imagenet_30 = IMAGENET30_TEST_DATASET()
-        imagenet30_img = imagenet_30[int(random.random() * len(imagenet30_testset))][0].resize((256, 256))
+        imagenet30_img = imagenet_30[int(random.random() * len(imagenet_30))][0].resize((256, 256))
 
         if torch.is_tensor(idx):
             idx = idx.tolist()
