@@ -47,8 +47,7 @@ class MVTecDRAEMTestDataset(Dataset):
     def transform_image(self, image_path, mask_path):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
         if mask_path is not None:
-            mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-            print(os.path.exists(mask_path))
+            mask = cv2.imread(mask_path, cv2.IMREAD_COLOR)
         else:
             mask = np.zeros((image.shape[0], image.shape[1]))
         if self.resize_shape is not None:
