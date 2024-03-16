@@ -94,8 +94,8 @@ class MVTecDRAEMTestDataset(Dataset):
         # img1 = Image.fromarray(image)
         image = center_paste(imagenet30_img, img1)
 
-        image = image / 255.0
         image = np.array(image).reshape((256, 256, 3)).astype(np.float32)
+        image = image / 255.0
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
