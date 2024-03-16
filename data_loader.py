@@ -53,6 +53,7 @@ class MVTecDRAEMTestDataset(Dataset):
         if self.resize_shape is not None:
             image = cv2.resize(image, dsize=(self.resize_shape, self.resize_shape))
             mask = cv2.resize(mask, dsize=(256, 256))
+            print(mask)
 
         image = image / 255.0
         mask = mask / 255.0
@@ -97,7 +98,7 @@ class MVTecDRAEMTestDataset(Dataset):
         image = image / 255.0
         image = np.transpose(image, (2, 0, 1))
 
-        print(has_anomaly)
+        # print(has_anomaly)
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
