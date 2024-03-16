@@ -33,7 +33,6 @@ def center_paste(large_img, small_img):
 
 class MVTecDRAEMTestDataset(Dataset):
 
-
     def __init__(self, root_dir, shrink_factor, resize_shape=None):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
@@ -73,7 +72,11 @@ class MVTecDRAEMTestDataset(Dataset):
             idx = idx.tolist()
 
         img_path = self.images[idx]
-        # img1 = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        img1 = Image.open(img_path)
+
+        if self.resize_shape is not None:
+            resizeTransf = transforms.Resize(self.resize_shape, Image.ANTIALIAS)
+            img1 = resizeTransf(img1)
 
         dir_path, file_name = os.path.split(img_path)
         base_dir = os.path.basename(dir_path)
@@ -88,9 +91,10 @@ class MVTecDRAEMTestDataset(Dataset):
             image, mask = self.transform_image(img_path, mask_path)
             has_anomaly = np.array([1], dtype=np.float32)
 
-        img1 = Image.fromarray(image)
+        # img1 = Image.fromarray(image)
         image = center_paste(imagenet30_img, img1)
 
+        image = image / 255.0
         image = np.array(image).reshape((256, 256, 3)).astype(np.float32)
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
