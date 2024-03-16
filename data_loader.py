@@ -97,6 +97,7 @@ class MVTecDRAEMTestDataset(Dataset):
         image = image / 255.0
         image = np.transpose(image, (2, 0, 1))
 
+        print(mask)
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
