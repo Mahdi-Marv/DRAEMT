@@ -6,144 +6,155 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 import os
+import matplotlib.pyplot as plt
 
-def write_results_to_file(run_name, image_auc, pixel_auc, image_ap, pixel_ap):
-    if not os.path.exists('./outputs/'):
-        os.makedirs('./outputs/')
 
-    fin_str = "img_auc,"+run_name
-    for i in image_auc:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += ","+str(np.round(np.mean(image_auc), 3))
-    fin_str += "\n"
-    fin_str += "pixel_auc,"+run_name
-    for i in pixel_auc:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += ","+str(np.round(np.mean(pixel_auc), 3))
-    fin_str += "\n"
-    fin_str += "img_ap,"+run_name
-    for i in image_ap:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += ","+str(np.round(np.mean(image_ap), 3))
-    fin_str += "\n"
-    fin_str += "pixel_ap,"+run_name
-    for i in pixel_ap:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += ","+str(np.round(np.mean(pixel_ap), 3))
-    fin_str += "\n"
-    fin_str += "--------------------------\n"
+def plot_images_and_save(dataloader, subclass_name, shrink_factor, grid_size=(5, 4)):
+    # Adjusted to handle the dataset's dictionary structure
+    batch = next(iter(dataloader))
+    images = batch['image']
+    # Plotting
+    fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=(15, 10))
+    for i, ax in enumerate(axs.flat):
+        if i >= len(images):  # Ensure we do not go out of bounds
+            break
+        ax.imshow(images[i].permute(1, 2, 0))  # Adjust if your images don't need permute
+        ax.axis('off')
+    fig.suptitle(f'{subclass_name} with shrink factor: {shrink_factor}', fontsize=16)  # Set the title for the figure
 
-    with open("./outputs/results.txt",'a+') as file:
-        file.write(fin_str)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout to make room for the title
+
+    # Ensure the folder exists
+    # Assuming all images in the batch share the same subclass
+    folder_path = f'/kaggle/working/plots/{subclass_name}'
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    # Save the figure
+    fig_path = os.path.join(folder_path, f'image_grid_{shrink_factor}.png')
+    plt.savefig(fig_path)
+    plt.close(fig)  # Close the figure to free memory
 
 
 def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
-    obj_ap_pixel_list = []
-    obj_auroc_pixel_list = []
-    obj_ap_image_list = []
-    obj_auroc_image_list = []
+    shrink_factors = [0.8, 1, 0.98, 0.9, 0.95, 0.85]
+
+    factor_stats = {}
+
+    for factor in shrink_factors:
+        factor_stats[factor] = {
+            'total_image_roc_auc': [],
+            'total_pixel_roc_auc': [],
+            'ap_image': [],
+            'ap_pixel': []
+        }
+
     for obj_name in obj_names:
         img_dim = 256
-        run_name = base_model_name+"_"+obj_name+'_'
+        run_name = base_model_name + "_" + obj_name + '_'
 
         model = ReconstructiveSubNetwork(in_channels=3, out_channels=3)
-        model.load_state_dict(torch.load(os.path.join(checkpoint_path,run_name+".pckl"), map_location='cuda:0'))
+        model.load_state_dict(torch.load(os.path.join(checkpoint_path, run_name + ".pckl"), map_location='cuda:0'))
         model.cuda()
         model.eval()
 
         model_seg = DiscriminativeSubNetwork(in_channels=6, out_channels=2)
-        model_seg.load_state_dict(torch.load(os.path.join(checkpoint_path, run_name+"_seg.pckl"), map_location='cuda:0'))
+        model_seg.load_state_dict(
+            torch.load(os.path.join(checkpoint_path, run_name + "_seg.pckl"), map_location='cuda:0'))
         model_seg.cuda()
         model_seg.eval()
 
-        dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=[img_dim, img_dim])
-        dataloader = DataLoader(dataset, batch_size=1,
-                                shuffle=False, num_workers=0)
+        for factor in shrink_factors:
 
-        total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
-        total_gt_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
-        mask_cnt = 0
+            dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256)
+            dataloader = DataLoader(dataset, batch_size=1,
+                                    shuffle=False, num_workers=0)
 
-        anomaly_score_gt = []
-        anomaly_score_prediction = []
+            plot_images_and_save(dataloader, obj_name, factor)
 
-        display_images = torch.zeros((16 ,3 ,256 ,256)).cuda()
-        display_gt_images = torch.zeros((16 ,3 ,256 ,256)).cuda()
-        display_out_masks = torch.zeros((16 ,1 ,256 ,256)).cuda()
-        display_in_masks = torch.zeros((16 ,1 ,256 ,256)).cuda()
-        cnt_display = 0
-        display_indices = np.random.randint(len(dataloader), size=(16,))
+            total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
+            total_gt_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
+            mask_cnt = 0
+
+            anomaly_score_gt = []
+            anomaly_score_prediction = []
+
+            display_images = torch.zeros((16, 3, 256, 256)).cuda()
+            display_gt_images = torch.zeros((16, 3, 256, 256)).cuda()
+            display_out_masks = torch.zeros((16, 1, 256, 256)).cuda()
+            display_in_masks = torch.zeros((16, 1, 256, 256)).cuda()
+            cnt_display = 0
+            display_indices = np.random.randint(len(dataloader), size=(16,))
+
+            for i_batch, sample_batched in enumerate(dataloader):
+
+                gray_batch = sample_batched["image"].cuda()
+
+                is_normal = sample_batched["has_anomaly"].detach().numpy()[0, 0]
+                anomaly_score_gt.append(is_normal)
+                true_mask = sample_batched["mask"]
+                true_mask_cv = true_mask.detach().numpy()[0, :, :, :].transpose((1, 2, 0))
+
+                gray_rec = model(gray_batch)
+                joined_in = torch.cat((gray_rec.detach(), gray_batch), dim=1)
+
+                out_mask = model_seg(joined_in)
+                out_mask_sm = torch.softmax(out_mask, dim=1)
+
+                if i_batch in display_indices:
+                    t_mask = out_mask_sm[:, 1:, :, :]
+                    display_images[cnt_display] = gray_rec[0]
+                    display_gt_images[cnt_display] = gray_batch[0]
+                    display_out_masks[cnt_display] = t_mask[0]
+                    display_in_masks[cnt_display] = true_mask[0]
+                    cnt_display += 1
+
+                out_mask_cv = out_mask_sm[0, 1, :, :].detach().cpu().numpy()
+
+                out_mask_averaged = torch.nn.functional.avg_pool2d(out_mask_sm[:, 1:, :, :], 21, stride=1,
+                                                                   padding=21 // 2).cpu().detach().numpy()
+                image_score = np.max(out_mask_averaged)
+
+                anomaly_score_prediction.append(image_score)
+
+                flat_true_mask = true_mask_cv.flatten()
+                flat_out_mask = out_mask_cv.flatten()
+                total_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_out_mask
+                total_gt_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_true_mask
+                mask_cnt += 1
+
+                anomaly_score_prediction = np.array(anomaly_score_prediction)
+                anomaly_score_gt = np.array(anomaly_score_gt)
+                auroc = roc_auc_score(anomaly_score_gt, anomaly_score_prediction)
+                ap = average_precision_score(anomaly_score_gt, anomaly_score_prediction)
+
+                total_gt_pixel_scores = total_gt_pixel_scores.astype(np.uint8)
+                total_gt_pixel_scores = total_gt_pixel_scores[:img_dim * img_dim * mask_cnt]
+                total_pixel_scores = total_pixel_scores[:img_dim * img_dim * mask_cnt]
+                auroc_pixel = roc_auc_score(total_gt_pixel_scores, total_pixel_scores)
+                ap_pixel = average_precision_score(total_gt_pixel_scores, total_pixel_scores)
+                factor_stats[factor]['ap_pixel'].append(ap_pixel)
+                factor_stats[factor]['ap_image'].append(ap)
+                factor_stats[factor]['total_pixel_roc_auc'].append(auroc_pixel)
+                factor_stats[factor]['total_image_roc_auc'].append(auroc)
+
+                print(obj_name, f'shrink factor: {factor}')
+                print("AUC Image:  " + str(auroc))
+                print("AP Image:  " + str(ap))
+                print("AUC Pixel:  " + str(auroc_pixel))
+                print("AP Pixel:  " + str(ap_pixel))
+                print("==============================")
+
+    for factor in shrink_factors:
+        print(f'shrink factor: {factor}')
+        print("AUC Image mean:  " + str(np.mean(factor_stats[factor]['total_image_roc_auc'])))
+        print("AP Image mean:  " + str(np.mean(factor_stats[factor]['ap_image'])))
+        print("AUC Pixel mean:  " + str(np.mean(factor_stats[factor]['total_pixel_roc_auc'])))
+        print("AP Pixel mean:  " + str(np.mean(factor_stats[factor]['ap_pixel'])))
+
+    # write_results_to_file(run_name, obj_auroc_image_list, obj_auroc_pixel_list, obj_ap_image_list, obj_ap_pixel_list)
 
 
-        for i_batch, sample_batched in enumerate(dataloader):
-
-            gray_batch = sample_batched["image"].cuda()
-
-            is_normal = sample_batched["has_anomaly"].detach().numpy()[0 ,0]
-            anomaly_score_gt.append(is_normal)
-            true_mask = sample_batched["mask"]
-            true_mask_cv = true_mask.detach().numpy()[0, :, :, :].transpose((1, 2, 0))
-
-            gray_rec = model(gray_batch)
-            joined_in = torch.cat((gray_rec.detach(), gray_batch), dim=1)
-
-            out_mask = model_seg(joined_in)
-            out_mask_sm = torch.softmax(out_mask, dim=1)
-
-
-            if i_batch in display_indices:
-                t_mask = out_mask_sm[:, 1:, :, :]
-                display_images[cnt_display] = gray_rec[0]
-                display_gt_images[cnt_display] = gray_batch[0]
-                display_out_masks[cnt_display] = t_mask[0]
-                display_in_masks[cnt_display] = true_mask[0]
-                cnt_display += 1
-
-
-            out_mask_cv = out_mask_sm[0 ,1 ,: ,:].detach().cpu().numpy()
-
-            out_mask_averaged = torch.nn.functional.avg_pool2d(out_mask_sm[: ,1: ,: ,:], 21, stride=1,
-                                                               padding=21 // 2).cpu().detach().numpy()
-            image_score = np.max(out_mask_averaged)
-
-            anomaly_score_prediction.append(image_score)
-
-            flat_true_mask = true_mask_cv.flatten()
-            flat_out_mask = out_mask_cv.flatten()
-            total_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_out_mask
-            total_gt_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_true_mask
-            mask_cnt += 1
-
-        anomaly_score_prediction = np.array(anomaly_score_prediction)
-        anomaly_score_gt = np.array(anomaly_score_gt)
-        auroc = roc_auc_score(anomaly_score_gt, anomaly_score_prediction)
-        ap = average_precision_score(anomaly_score_gt, anomaly_score_prediction)
-
-        total_gt_pixel_scores = total_gt_pixel_scores.astype(np.uint8)
-        total_gt_pixel_scores = total_gt_pixel_scores[:img_dim * img_dim * mask_cnt]
-        total_pixel_scores = total_pixel_scores[:img_dim * img_dim * mask_cnt]
-        auroc_pixel = roc_auc_score(total_gt_pixel_scores, total_pixel_scores)
-        ap_pixel = average_precision_score(total_gt_pixel_scores, total_pixel_scores)
-        obj_ap_pixel_list.append(ap_pixel)
-        obj_auroc_pixel_list.append(auroc_pixel)
-        obj_auroc_image_list.append(auroc)
-        obj_ap_image_list.append(ap)
-        print(obj_name)
-        print("AUC Image:  " +str(auroc))
-        print("AP Image:  " +str(ap))
-        print("AUC Pixel:  " +str(auroc_pixel))
-        print("AP Pixel:  " +str(ap_pixel))
-        print("==============================")
-
-    print(run_name)
-    print("AUC Image mean:  " + str(np.mean(obj_auroc_image_list)))
-    print("AP Image mean:  " + str(np.mean(obj_ap_image_list)))
-    print("AUC Pixel mean:  " + str(np.mean(obj_auroc_pixel_list)))
-    print("AP Pixel mean:  " + str(np.mean(obj_ap_pixel_list)))
-
-    write_results_to_file(run_name, obj_auroc_image_list, obj_auroc_pixel_list, obj_ap_image_list, obj_ap_pixel_list)
-
-if __name__=="__main__":
+if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -155,21 +166,21 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     obj_list = ['capsule',
-                 'bottle',
-                 'carpet',
-                 'leather',
-                 'pill',
-                 'transistor',
-                 'tile',
-                 'cable',
-                 'zipper',
-                 'toothbrush',
-                 'metal_nut',
-                 'hazelnut',
-                 'screw',
-                 'grid',
-                 'wood'
-                 ]
+                'bottle',
+                'carpet',
+                'leather',
+                'pill',
+                'transistor',
+                'tile',
+                'cable',
+                'zipper',
+                'toothbrush',
+                'metal_nut',
+                'hazelnut',
+                'screw',
+                'grid',
+                'wood'
+                ]
 
     with torch.cuda.device(args.gpu_id):
-        test(obj_list,args.data_path, args.checkpoint_path, args.base_model_name)
+        test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name)
