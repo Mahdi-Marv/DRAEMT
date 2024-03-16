@@ -50,7 +50,7 @@ class MVTecDRAEMTestDataset(Dataset):
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         else:
             mask = np.zeros((image.shape[0], image.shape[1]))
-        if self.resize_shape != None:
+        if self.resize_shape is not None:
             image = cv2.resize(image, dsize=(self.resize_shape, self.resize_shape))
             mask = cv2.resize(mask, dsize=(256, 256))
 
@@ -97,7 +97,7 @@ class MVTecDRAEMTestDataset(Dataset):
         image = image / 255.0
         image = np.transpose(image, (2, 0, 1))
 
-        print(mask)
+        print(has_anomaly)
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
