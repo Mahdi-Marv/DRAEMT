@@ -9,6 +9,7 @@ from perlin import rand_perlin_2d_np
 from imagenet_30 import IMAGENET30_TEST_DATASET
 import random
 
+
 def center_paste(large_img, small_img):
     # Calculate the center position
     large_width, large_height = large_img.size
@@ -29,11 +30,10 @@ def center_paste(large_img, small_img):
 
 class MVTecDRAEMTestDataset(Dataset):
 
-
     def __init__(self, root_dir, shrink_factor, resize_shape=None):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
-        self.resize_shape = resize_shape * shrink_factor
+        self.resize_shape = int(resize_shape * shrink_factor)
 
     def __len__(self):
         return len(self.images)
@@ -46,7 +46,7 @@ class MVTecDRAEMTestDataset(Dataset):
             mask = np.zeros((image.shape[0], image.shape[1]))
         if self.resize_shape != None:
             image = cv2.resize(image, dsize=(self.resize_shape, self.resize_shape))
-            mask = cv2.resize(mask, dsize=(self.resize_shape, self.resize_shape))
+            mask = cv2.resize(mask, dsize=(256, 256))
 
         image = image / 255.0
         mask = mask / 255.0
