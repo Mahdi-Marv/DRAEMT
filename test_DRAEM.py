@@ -66,7 +66,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
         for factor in shrink_factors:
 
             dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256, shrink_factor=factor)
-            dataloader = DataLoader(dataset, batch_size=32,
+            dataloader = DataLoader(dataset, batch_size=4,
                                     shuffle=False, num_workers=4)
 
             plot_images_and_save(dataloader, obj_name, factor)
