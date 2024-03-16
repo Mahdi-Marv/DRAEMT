@@ -7,7 +7,7 @@ import glob
 import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
 from imagenet_30 import IMAGENET30_TEST_DATASET
-
+import random
 
 def center_paste(large_img, small_img):
     # Calculate the center position
