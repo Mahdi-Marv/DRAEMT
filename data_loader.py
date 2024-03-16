@@ -75,7 +75,7 @@ class MVTecDRAEMTestDataset(Dataset):
         img1 = Image.open(img_path)
 
         if self.resize_shape is not None:
-            resizeTransf = transforms.Resize(self.resize_shape, Image.ANTIALIAS)
+            resizeTransf = transforms.Resize(self.resize_shape)
             img1 = resizeTransf(img1)
 
         dir_path, file_name = os.path.split(img_path)
