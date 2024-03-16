@@ -7,7 +7,10 @@ import glob
 import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
 from imagenet_30 import IMAGENET30_TEST_DATASET
+from torchvision import transforms
 import random
+from torchvision import transforms as T
+from PIL import Image
 
 
 def center_paste(large_img, small_img):
@@ -30,10 +33,14 @@ def center_paste(large_img, small_img):
 
 class MVTecDRAEMTestDataset(Dataset):
 
+
     def __init__(self, root_dir, shrink_factor, resize_shape=None):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
         self.resize_shape = int(resize_shape * shrink_factor)
+        self.transform = T.Compose([T.Resize(256),
+                                    T.ToTensor(),
+                                    ])
 
     def __len__(self):
         return len(self.images)
@@ -66,6 +73,8 @@ class MVTecDRAEMTestDataset(Dataset):
             idx = idx.tolist()
 
         img_path = self.images[idx]
+        # img1 = cv2.imread(img_path, cv2.IMREAD_COLOR)
+
         dir_path, file_name = os.path.split(img_path)
         base_dir = os.path.basename(dir_path)
         if base_dir == 'good':
@@ -79,7 +88,10 @@ class MVTecDRAEMTestDataset(Dataset):
             image, mask = self.transform_image(img_path, mask_path)
             has_anomaly = np.array([1], dtype=np.float32)
 
-        image = center_paste(imagenet30_img, image)
+        img1 = Image.fromarray(image)
+        image = center_paste(imagenet30_img, img1)
+
+        image = np.array(image).reshape((256, 256, 3)).astype(np.float32)
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 

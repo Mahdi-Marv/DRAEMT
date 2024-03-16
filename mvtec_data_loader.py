@@ -6,7 +6,9 @@ import numpy as np
 import torch.utils.data as data
 import matplotlib.image as mpimg
 from torchvision import transforms
+from torchvision import transforms
 import random
+from torchvision import transforms as T
 
 from PIL import Image
 
