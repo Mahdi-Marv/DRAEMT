@@ -29,6 +29,7 @@ def center_paste(large_img, small_img):
 
 class MVTecDRAEMTestDataset(Dataset):
 
+
     def __init__(self, root_dir, shrink_factor, resize_shape=None):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
