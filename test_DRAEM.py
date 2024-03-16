@@ -7,6 +7,7 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 import os
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 def plot_images_and_save(dataloader, subclass_name, shrink_factor, grid_size=(5, 4)):
@@ -66,7 +67,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
         for factor in shrink_factors:
 
             dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256, shrink_factor=factor)
-            dataloader = DataLoader(dataset, batch_size=16,
+            dataloader = DataLoader(dataset, batch_size=8,
                                     shuffle=False, num_workers=4)
 
             plot_images_and_save(dataloader, obj_name, factor)
@@ -85,7 +86,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
             cnt_display = 0
             display_indices = np.random.randint(len(dataloader), size=(16,))
 
-            for i_batch, sample_batched in enumerate(dataloader):
+            for i_batch, sample_batched in tqdm(enumerate(dataloader), desc="Batches", leave=False):
 
                 gray_batch = sample_batched["image"].cuda()
 
