@@ -93,10 +93,10 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
 
             if i_batch in display_indices:
                 t_mask = out_mask_sm[:, 1:, :, :]
-                display_images[cnt_display] = gray_rec[0]
-                display_gt_images[cnt_display] = gray_batch[0]
-                display_out_masks[cnt_display] = t_mask[0]
-                display_in_masks[cnt_display] = true_mask[0]
+                display_images[cnt_display] = gray_rec[0].cpu().detach()
+                display_gt_images[cnt_display] = gray_batch[0].cpu().detach()
+                display_out_masks[cnt_display] = t_mask[0].cpu().detach()
+                display_in_masks[cnt_display] = true_mask[0].cpu().detach()
                 cnt_display += 1
 
 
