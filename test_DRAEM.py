@@ -10,30 +10,47 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-def plot_images_and_save(dataloader, subclass_name, shrink_factor, grid_size=(5, 4)):
-    # Adjusted to handle the dataset's dictionary structure
-    batch = next(iter(dataloader))
-    images = batch['image']
-    # Plotting
-    fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=(15, 10))
-    for i, ax in enumerate(axs.flat):
-        if i >= len(images):  # Ensure we do not go out of bounds
-            break
-        ax.imshow(images[i].permute(1, 2, 0))  # Adjust if your images don't need permute
-        ax.axis('off')
-    fig.suptitle(f'{subclass_name} with shrink factor: {shrink_factor}', fontsize=16)  # Set the title for the figure
+import matplotlib.pyplot as plt
+import os
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout to make room for the title
+def plot_images_and_save(dataloader, subclass_name, shrink_factor, grid_size=(5, 4), target_total_images=20):
+    images_collected = []
+    fig, axs = plt.subplots(grid_size[0], grid_size[1], figsize=(15, 10))
+
+    # Iterate over the dataloader and collect images until you reach the desired number or exhaust the dataloader
+    for batch in dataloader:
+        images_batch = batch['image']
+        for img in images_batch:
+            images_collected.append(img)
+            if len(images_collected) >= target_total_images:
+                break
+        if len(images_collected) >= target_total_images:
+            break
+
+    # Plotting
+    for i, ax in enumerate(axs.flat):
+        if i >= len(images_collected):  # Ensure we do not go out of bounds
+            break
+        # Adjust the permute as necessary based on your image tensor dimensions
+        ax.imshow(images_collected[i].permute(1, 2, 0).cpu().numpy())
+        ax.axis('off')
+
+    # Adjust subplot parameters to give specified padding
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    fig.suptitle(f'{subclass_name} with shrink factor: {shrink_factor}', fontsize=16)
 
     # Ensure the folder exists
-    # Assuming all images in the batch share the same subclass
     folder_path = f'/kaggle/working/plots/{subclass_name}'
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
+
     # Save the figure
     fig_path = os.path.join(folder_path, f'image_grid_{shrink_factor}.png')
     plt.savefig(fig_path)
     plt.close(fig)  # Close the figure to free memory
+
+# Note: Ensure that the images are moved to CPU and converted to numpy arrays if you're using a GPU for training.
+
 
 
 def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
@@ -66,11 +83,11 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
 
         for factor in shrink_factors:
 
-            dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256)
-            dataloader = DataLoader(dataset, batch_size=8,
+            dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256, shrink_factor=factor)
+            dataloader = DataLoader(dataset, batch_size=1,
                                     shuffle=False, num_workers=0)
 
-            # plot_images_and_save(dataloader, obj_name, factor)
+            plot_images_and_save(dataloader, obj_name, factor)
 
             total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
             total_gt_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
@@ -125,27 +142,28 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
                 total_gt_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_true_mask
                 mask_cnt += 1
 
-                anomaly_score_prediction = np.array(anomaly_score_prediction)
-                anomaly_score_gt = np.array(anomaly_score_gt)
-                auroc = roc_auc_score(anomaly_score_gt, anomaly_score_prediction)
-                ap = average_precision_score(anomaly_score_gt, anomaly_score_prediction)
+            anomaly_score_prediction = np.array(anomaly_score_prediction)
+            anomaly_score_gt = np.array(anomaly_score_gt)
+            auroc = roc_auc_score(anomaly_score_gt, anomaly_score_prediction)
+            ap = average_precision_score(anomaly_score_gt, anomaly_score_prediction)
 
-                total_gt_pixel_scores = total_gt_pixel_scores.astype(np.uint8)
-                total_gt_pixel_scores = total_gt_pixel_scores[:img_dim * img_dim * mask_cnt]
-                total_pixel_scores = total_pixel_scores[:img_dim * img_dim * mask_cnt]
-                auroc_pixel = roc_auc_score(total_gt_pixel_scores, total_pixel_scores)
-                ap_pixel = average_precision_score(total_gt_pixel_scores, total_pixel_scores)
-                factor_stats[factor]['ap_pixel'].append(ap_pixel)
-                factor_stats[factor]['ap_image'].append(ap)
-                factor_stats[factor]['total_pixel_roc_auc'].append(auroc_pixel)
-                factor_stats[factor]['total_image_roc_auc'].append(auroc)
+            total_gt_pixel_scores = total_gt_pixel_scores.astype(np.uint8)
+            total_gt_pixel_scores = total_gt_pixel_scores[:img_dim * img_dim * mask_cnt]
+            total_pixel_scores = total_pixel_scores[:img_dim * img_dim * mask_cnt]
+            auroc_pixel = roc_auc_score(total_gt_pixel_scores, total_pixel_scores)
+            ap_pixel = average_precision_score(total_gt_pixel_scores, total_pixel_scores)
+            factor_stats[factor]['ap_pixel'].append(ap_pixel)
+            factor_stats[factor]['ap_image'].append(ap)
+            factor_stats[factor]['total_pixel_roc_auc'].append(auroc_pixel)
+            factor_stats[factor]['total_image_roc_auc'].append(auroc)
 
-                print(obj_name, f'shrink factor: {factor}')
-                print("AUC Image:  " + str(auroc))
-                print("AP Image:  " + str(ap))
-                print("AUC Pixel:  " + str(auroc_pixel))
-                print("AP Pixel:  " + str(ap_pixel))
-                print("==============================")
+            print(obj_name, f'shrink factor: {factor}')
+            print("AUC Image:  " + str(auroc))
+            print("AP Image:  " + str(ap))
+            print("AUC Pixel:  " + str(auroc_pixel))
+            print("AP Pixel:  " + str(ap_pixel))
+            print("==============================")
+
 
     for factor in shrink_factors:
         print(f'shrink factor: {factor}')
