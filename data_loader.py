@@ -49,6 +49,29 @@ def mod(img1):
     return img1
 
 
+def paste2(img1, img2):
+    first_image_shape = img1.shape  # (C, H, W)
+    second_image_shape = img2.shape  # (C, H, W)
+
+    # Center coordinates on the first image
+    center_y = (first_image_shape[1] - second_image_shape[1]) // 2
+    center_x = (first_image_shape[2] - second_image_shape[2]) // 2
+
+    # Prepare the first image for modification
+    img1_modifiable = np.transpose(img1, (1, 2, 0))  # Change back to (H, W, C) for easier manipulation
+
+    # Paste the second image onto the first image at the calculated position
+    # Ensure alignment of channels during assignment
+    for c in range(3):  # Iterate over the color channels
+        img1_modifiable[center_y:center_y + second_image_shape[1],
+        center_x:center_x + second_image_shape[2], c] = \
+            np.transpose(img2, (1, 2, 0))[:, :, c]
+
+    # Convert back to (C, H, W) after modification
+    imagenet30_img_center_pasted = np.transpose(img1_modifiable, (2, 0, 1))
+    return imagenet30_img_center_pasted
+
+
 class MVTecDRAEMTestDataset(Dataset):
 
     def __init__(self, root_dir, shrink_factor=1, resize_shape=None):
@@ -62,14 +85,14 @@ class MVTecDRAEMTestDataset(Dataset):
     def __len__(self):
         return len(self.images)
 
-    def transform_image(self, image_path, mask_path):
+    def transform(self, image_path, mask_path):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
         if mask_path is not None:
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         else:
             mask = np.zeros((image.shape[0], image.shape[1]))
         if self.resize_shape is not None:
-            image = cv2.resize(image, dsize=(256, 256))
+            image = cv2.resize(image, dsize=(self.resize_shape, self.resize_shape))
             mask = cv2.resize(mask, dsize=(256, 256))
             # print(mask)
 
@@ -83,50 +106,15 @@ class MVTecDRAEMTestDataset(Dataset):
         mask = np.transpose(mask, (2, 0, 1))
         return image, mask
 
-    def transform_and_paste(self, image_path, mask_path):
-        imagenet_30 = IMAGENET30_TEST_DATASET()
-        background_image_pil = imagenet_30[int(random.random() * len(imagenet_30))][0].resize((256, 256))
-
-        # Load and transform the foreground image using OpenCV
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        if mask_path is not None:
-            mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        else:
-            mask = np.zeros((image.shape[0], image.shape[1]))
-        if self.resize_shape is not None:
-            image = cv2.resize(image, dsize=(256, 256))
-            mask = cv2.resize(mask, dsize=(256, 256))
-
-        image = image / 255.0
-        mask = mask / 255.0
-
-        image = np.array(image).reshape((image.shape[0], image.shape[1], 3)).astype(np.float32)
-        mask = np.array(mask).reshape((mask.shape[0], mask.shape[1], 1)).astype(np.float32)
-
-        # Convert the OpenCV image (BGR) to PIL format (RGB)
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        transformed_image_pil = Image.fromarray((image_rgb * 255).astype(np.uint8))
-
-        # Calculate the position to paste the transformed image on the background
-        background_width, background_height = background_image_pil.size
-        foreground_width, foreground_height = transformed_image_pil.size
-        position = ((background_width - foreground_width) // 2, (background_height - foreground_height) // 2)
-
-        # Paste the transformed image onto the background PIL image
-        background_image_pil.paste(transformed_image_pil, position, transformed_image_pil)
-
-        # Convert the modified PIL image back to a NumPy array in BGR format for OpenCV compatibility
-        final_image_np = np.array(background_image_pil)
-        final_image_np = cv2.cvtColor(final_image_np, cv2.COLOR_RGB2BGR)
-
-        # Ensure the final image is in the same data type as the original OpenCV image, typically uint8
-        final_image_np = final_image_np.astype(np.float32)/255
-
-        return final_image_np, mask  # Returning the final image as a NumPy array and the mask
-
     def __getitem__(self, idx):
         imagenet_30 = IMAGENET30_TEST_DATASET()
-        imagenet30_img = imagenet_30[int(random.random() * len(imagenet_30))][0].resize((256, 256))
+        random_index = int(random.random() * len(imagenet_30))
+        random_image_path = imagenet_30[random_index]
+        imagenet30_img = cv2.imread(random_image_path, cv2.IMREAD_COLOR)
+        imagenet30_img = cv2.resize(imagenet30_img, dsize=(256, 256)) / 255.0
+        imagenet30_img = np.array(imagenet30_img).reshape((imagenet30_img.shape[0], imagenet30_img.shape[1], 3)).astype(
+            np.float32)
+        imagenet30_img = np.transpose(imagenet30_img, (2, 0, 1))
 
         if torch.is_tensor(idx):
             idx = idx.tolist()
@@ -149,14 +137,14 @@ class MVTecDRAEMTestDataset(Dataset):
         dir_path, file_name = os.path.split(img_path)
         base_dir = os.path.basename(dir_path)
         if base_dir == 'good':
-            image, mask = self.transform_and_paste(img_path, None)
+            image, mask = self.transform(img_path, None)
             has_anomaly = np.array([0], dtype=np.float32)
         else:
             mask_path = os.path.join(dir_path, '../../ground_truth/')
             mask_path = os.path.join(mask_path, base_dir)
             mask_file_name = file_name.split(".")[0] + "_mask.png"
             mask_path = os.path.join(mask_path, mask_file_name)
-            image, mask = self.transform_and_paste(img_path, mask_path)
+            image, mask = self.transform(img_path, mask_path)
             has_anomaly = np.array([1], dtype=np.float32)
 
         # image = center_paste(imagenet30_img, img1)
@@ -167,8 +155,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
         # print(has_anomaly)
 
-
-
+        img1 = paste2(imagenet30_img, image)
         sample = {'image': img1, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
         return sample

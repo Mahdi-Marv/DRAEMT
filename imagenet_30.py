@@ -2,6 +2,8 @@ from torch.utils.data import Dataset
 from PIL import ImageFilter, Image, ImageOps
 from torchvision.datasets.folder import default_loader
 import os
+import cv2
+
 
 class IMAGENET30_TEST_DATASET(Dataset):
     def __init__(self, root_dir="/kaggle/input/imagenet30-dataset/one_class_test/one_class_test/", transform=None):
@@ -38,8 +40,5 @@ class IMAGENET30_TEST_DATASET(Dataset):
 
     def __getitem__(self, idx):
         img_path = self.img_path_list[idx]
-        image = default_loader(img_path)
         label = self.targets[idx]
-        if self.transform:
-            image = self.transform(image)
-        return image, label
+        return img_path, label
