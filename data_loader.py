@@ -31,15 +31,32 @@ def center_paste(large_img, small_img):
     return result_img
 
 
+def mod(img1):
+    img1 = np.array(img1)
+
+    img1 = img1 / 255.0
+
+    if len(img1.shape) == 2:
+        img1 = np.stack((img1,) * 3, axis=-1)
+    elif img1.shape[2] > 3:  # For RGBA images or images with more than 3 channels
+        img1 = img1[:, :, :3]  # Keep only the first 3 channels
+
+    img1 = img1.astype(np.float32)
+
+    img1 = np.transpose(img1, (2, 0, 1))
+
+    return img1
+
+
 class MVTecDRAEMTestDataset(Dataset):
 
     def __init__(self, root_dir, shrink_factor=1, resize_shape=None):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
         self.resize_shape = int(resize_shape * shrink_factor)
-        self.transform = T.Compose([T.Resize(256),
-                                    T.ToTensor(),
-                                    ])
+        # self.transform = T.Compose([T.Resize(256),
+        #                             T.ToTensor(),
+        #                             ])
 
     def __len__(self):
         return len(self.images)
@@ -73,7 +90,11 @@ class MVTecDRAEMTestDataset(Dataset):
             idx = idx.tolist()
 
         img_path = self.images[idx]
-        img1 = Image.open(img_path)
+        img1 = Image.open(img_path).convert('RGB')
+        img1 = img1.resize((self.resize_shape, self.resize_shape))
+        img1 = center_paste(imagenet30_img, img1)
+
+        img1 = mod(img1)
 
         if self.resize_shape is not None:
             resizeTransf = transforms.Resize(self.resize_shape)
@@ -100,7 +121,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
         # print(has_anomaly)
 
-        sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
+        sample = {'image': img1, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
         return sample
 
