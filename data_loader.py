@@ -51,7 +51,7 @@ class MVTecDRAEMTestDataset(Dataset):
         else:
             mask = np.zeros((image.shape[0], image.shape[1]))
         if self.resize_shape is not None:
-            image = cv2.resize(image, dsize=(self.resize_shape, self.resize_shape))
+            image = cv2.resize(image, dsize=(256, 256))
             mask = cv2.resize(mask, dsize=(256, 256))
             # print(mask)
 
