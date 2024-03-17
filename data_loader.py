@@ -33,6 +33,7 @@ def center_paste(large_img, small_img):
 
 def mod(img1):
     img1 = np.array(img1)
+    img1 = img1[:, :, ::-1]
 
     img1 = img1 / 255.0
 
