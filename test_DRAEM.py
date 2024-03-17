@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from data_loader_origin import MVTecDRAEMTestDataset
+from data_loader import MVTecDRAEMTestDataset
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
@@ -70,10 +70,11 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
             dataloader = DataLoader(dataset, batch_size=1,
                                     shuffle=False, num_workers=0)
 
-            plot_images_and_save(dataloader, obj_name, factor)
+            # plot_images_and_save(dataloader, obj_name, factor)
 
             total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
             total_gt_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
+            print('len dataset: ', len(dataset))
             mask_cnt = 0
 
             anomaly_score_gt = []
