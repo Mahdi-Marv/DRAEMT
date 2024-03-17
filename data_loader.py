@@ -128,7 +128,11 @@ class MVTecDRAEMTestDataset(Dataset):
 
         img1 = Image.fromarray(image)
         img1 = center_paste(imagenet30_img, img1)
-        img1 = np.array(img1)
+        # Ensure img1 is in "RGB" mode before conversion
+        if img1.mode != 'RGB':
+            img1 = img1.convert('RGB')
+
+        img1 = np.array(img1).astype(np.float32)
 
         sample = {'image': img1, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
