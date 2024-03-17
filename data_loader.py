@@ -83,6 +83,47 @@ class MVTecDRAEMTestDataset(Dataset):
         mask = np.transpose(mask, (2, 0, 1))
         return image, mask
 
+    def transform_and_paste(self, image_path, mask_path):
+        imagenet_30 = IMAGENET30_TEST_DATASET()
+        background_image_pil = imagenet_30[int(random.random() * len(imagenet_30))][0].resize((256, 256))
+
+        # Load and transform the foreground image using OpenCV
+        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        if mask_path is not None:
+            mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+        else:
+            mask = np.zeros((image.shape[0], image.shape[1]))
+        if self.resize_shape is not None:
+            image = cv2.resize(image, dsize=(256, 256))
+            mask = cv2.resize(mask, dsize=(256, 256))
+
+        image = image / 255.0
+        mask = mask / 255.0
+
+        image = np.array(image).reshape((image.shape[0], image.shape[1], 3)).astype(np.float32)
+        mask = np.array(mask).reshape((mask.shape[0], mask.shape[1], 1)).astype(np.float32)
+
+        # Convert the OpenCV image (BGR) to PIL format (RGB)
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        transformed_image_pil = Image.fromarray((image_rgb * 255).astype(np.uint8))
+
+        # Calculate the position to paste the transformed image on the background
+        background_width, background_height = background_image_pil.size
+        foreground_width, foreground_height = transformed_image_pil.size
+        position = ((background_width - foreground_width) // 2, (background_height - foreground_height) // 2)
+
+        # Paste the transformed image onto the background PIL image
+        background_image_pil.paste(transformed_image_pil, position, transformed_image_pil)
+
+        # Convert the modified PIL image back to a NumPy array in BGR format for OpenCV compatibility
+        final_image_np = np.array(background_image_pil)
+        final_image_np = cv2.cvtColor(final_image_np, cv2.COLOR_RGB2BGR)
+
+        # Ensure the final image is in the same data type as the original OpenCV image, typically uint8
+        final_image_np = final_image_np.astype(np.float32)/255
+
+        return final_image_np, mask  # Returning the final image as a NumPy array and the mask
+
     def __getitem__(self, idx):
         imagenet_30 = IMAGENET30_TEST_DATASET()
         imagenet30_img = imagenet_30[int(random.random() * len(imagenet_30))][0].resize((256, 256))
@@ -108,14 +149,14 @@ class MVTecDRAEMTestDataset(Dataset):
         dir_path, file_name = os.path.split(img_path)
         base_dir = os.path.basename(dir_path)
         if base_dir == 'good':
-            image, mask = self.transform_image(img_path, None)
+            image, mask = self.transform_and_paste(img_path, None)
             has_anomaly = np.array([0], dtype=np.float32)
         else:
             mask_path = os.path.join(dir_path, '../../ground_truth/')
             mask_path = os.path.join(mask_path, base_dir)
             mask_file_name = file_name.split(".")[0] + "_mask.png"
             mask_path = os.path.join(mask_path, mask_file_name)
-            image, mask = self.transform_image(img_path, mask_path)
+            image, mask = self.transform_and_paste(img_path, mask_path)
             has_anomaly = np.array([1], dtype=np.float32)
 
         # image = center_paste(imagenet30_img, img1)
@@ -126,13 +167,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
         # print(has_anomaly)
 
-        img1 = Image.fromarray(image)
-        img1 = center_paste(imagenet30_img, img1)
-        # Ensure img1 is in "RGB" mode before conversion
-        if img1.mode != 'RGB':
-            img1 = img1.convert('RGB')
 
-        img1 = np.array(img1).astype(np.float32)
 
         sample = {'image': img1, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
