@@ -91,14 +91,15 @@ class MVTecDRAEMTestDataset(Dataset):
             idx = idx.tolist()
 
         img_path = self.images[idx]
-        img1 = Image.open(img_path).convert('RGB')
-        img1 = img1.resize((self.resize_shape, self.resize_shape))
-        img1 = np.array(img1)
-        img1 = img1[:, :, ::-1]
-        img1 = Image.fromarray(img1)
-        img1 = center_paste(imagenet30_img, img1)
-
-        img1 = mod(img1)
+        # img1 = Image.open(img_path).convert('RGB')
+        # img1 = np.array(img1)
+        # img1 = img1[:, :, ::-1]
+        # img1 = Image.fromarray(img1)
+        # img1 = img1.resize((self.resize_shape, self.resize_shape))
+        #
+        # img1 = center_paste(imagenet30_img, img1)
+        #
+        # img1 = mod(img1)
 
         # if self.resize_shape is not None:
         #     resizeTransf = transforms.Resize(self.resize_shape)
@@ -124,6 +125,10 @@ class MVTecDRAEMTestDataset(Dataset):
         # image = np.transpose(image, (2, 0, 1))
 
         # print(has_anomaly)
+
+        img1 = Image.fromarray(image)
+        img1 = center_paste(imagenet30_img, img1)
+        img1 = np.array(img1)
 
         sample = {'image': img1, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
