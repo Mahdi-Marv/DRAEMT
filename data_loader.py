@@ -121,7 +121,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
         # print(has_anomaly)
 
-        sample = {'image': img1, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
+        sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
         return sample
 
