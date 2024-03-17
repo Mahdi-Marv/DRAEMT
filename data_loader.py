@@ -33,7 +33,7 @@ def center_paste(large_img, small_img):
 
 def mod(img1):
     img1 = np.array(img1)
-    img1 = img1[:, :, ::-1]
+    # img1 = img1[:, :, ::-1]
 
     img1 = img1 / 255.0
 
@@ -93,6 +93,9 @@ class MVTecDRAEMTestDataset(Dataset):
         img_path = self.images[idx]
         img1 = Image.open(img_path).convert('RGB')
         img1 = img1.resize((self.resize_shape, self.resize_shape))
+        img1 = np.array(img1)
+        img1 = img1[:, :, ::-1]
+        img1 = Image.fromarray(img1)
         img1 = center_paste(imagenet30_img, img1)
 
         img1 = mod(img1)
