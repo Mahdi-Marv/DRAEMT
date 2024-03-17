@@ -91,7 +91,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
 
             total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
             total_gt_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
-            print('len dataset: ', len(dataset))
+            # print('len dataset: ', len(dataset))
             mask_cnt = 0
 
             anomaly_score_gt = []
@@ -109,7 +109,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
                 gray_batch = sample_batched["image"].cuda()
 
                 is_normal = sample_batched["has_anomaly"].detach().numpy()[0, 0]
-                print(is_normal)
+                # print(is_normal)
                 anomaly_score_gt.append(is_normal)
                 true_mask = sample_batched["mask"]
                 true_mask_cv = true_mask.detach().numpy()[0, :, :, :].transpose((1, 2, 0))
