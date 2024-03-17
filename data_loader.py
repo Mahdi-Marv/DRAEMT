@@ -96,9 +96,9 @@ class MVTecDRAEMTestDataset(Dataset):
 
         img1 = mod(img1)
 
-        if self.resize_shape is not None:
-            resizeTransf = transforms.Resize(self.resize_shape)
-            img1 = resizeTransf(img1)
+        # if self.resize_shape is not None:
+        #     resizeTransf = transforms.Resize(self.resize_shape)
+        #     img1 = resizeTransf(img1)
 
         dir_path, file_name = os.path.split(img_path)
         base_dir = os.path.basename(dir_path)
