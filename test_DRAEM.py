@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from data_loader import MVTecDRAEMTestDataset
+from data_loader_origin import MVTecDRAEMTestDataset
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
@@ -66,7 +66,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
 
         for factor in shrink_factors:
 
-            dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256, shrink_factor=factor)
+            dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256)
             dataloader = DataLoader(dataset, batch_size=1,
                                     shuffle=False, num_workers=0)
 
