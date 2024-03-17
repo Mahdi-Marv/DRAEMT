@@ -55,7 +55,6 @@ class MVTecDRAEMTestDataset(Dataset):
             image, mask = self.transform_image(img_path, mask_path)
             has_anomaly = np.array([1], dtype=np.float32)
 
-        print(mask)
 
         sample = {'image': image, 'has_anomaly': has_anomaly,'mask': mask, 'idx': idx}
 
