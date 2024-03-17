@@ -67,8 +67,8 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
         for factor in shrink_factors:
 
             dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=256, shrink_factor=factor)
-            dataloader = DataLoader(dataset, batch_size=8,
-                                    shuffle=True, num_workers=0)
+            dataloader = DataLoader(dataset, batch_size=1,
+                                    shuffle=False, num_workers=0)
 
             plot_images_and_save(dataloader, obj_name, factor)
 
@@ -86,7 +86,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
             cnt_display = 0
             display_indices = np.random.randint(len(dataloader), size=(16,))
 
-            for i_batch, sample_batched in tqdm(enumerate(dataloader), desc="Batches", leave=False):
+            for i_batch, sample_batched in enumerate(dataloader):
 
                 gray_batch = sample_batched["image"].cuda()
 
