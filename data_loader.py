@@ -31,45 +31,25 @@ def center_paste(large_img, small_img):
     return result_img
 
 
-def mod(img1):
-    img1 = np.array(img1)
-    # img1 = img1[:, :, ::-1]
+def pasteC(image):
 
-    img1 = img1 / 255.0
+    imagenet_30 = IMAGENET30_TEST_DATASET()
+    random_index = int(random.random() * len(imagenet_30))
+    imagenet30_img = imagenet_30[random_index]
+    imagenet30_img = cv2.resize(imagenet30_img, dsize=(256, 256))
 
-    if len(img1.shape) == 2:
-        img1 = np.stack((img1,) * 3, axis=-1)
-    elif img1.shape[2] > 3:  # For RGBA images or images with more than 3 channels
-        img1 = img1[:, :, :3]  # Keep only the first 3 channels
+    h, w = image.shape
 
-    img1 = img1.astype(np.float32)
+    hh, ww = imagenet30_img.shape
 
-    img1 = np.transpose(img1, (2, 0, 1))
+    # compute xoff and yoff for placement of upper left corner of resized image
+    yoff = round((hh - h) / 2)
+    xoff = round((ww - w) / 2)
+    print(yoff, xoff)
 
-    return img1
-
-
-def paste2(img1, img2):
-    first_image_shape = img1.shape  # (C, H, W)
-    second_image_shape = img2.shape  # (C, H, W)
-
-    # Center coordinates on the first image
-    center_y = (first_image_shape[1] - second_image_shape[1]) // 2
-    center_x = (first_image_shape[2] - second_image_shape[2]) // 2
-
-    # Prepare the first image for modification
-    img1_modifiable = np.transpose(img1, (1, 2, 0))  # Change back to (H, W, C) for easier manipulation
-
-    # Paste the second image onto the first image at the calculated position
-    # Ensure alignment of channels during assignment
-    for c in range(3):  # Iterate over the color channels
-        img1_modifiable[center_y:center_y + second_image_shape[1],
-        center_x:center_x + second_image_shape[2], c] = \
-            np.transpose(img2, (1, 2, 0))[:, :, c]
-
-    # Convert back to (C, H, W) after modification
-    imagenet30_img_center_pasted = np.transpose(img1_modifiable, (2, 0, 1))
-    return imagenet30_img_center_pasted
+    result = imagenet30_img.copy()
+    result[yoff:yoff + h, xoff:xoff + w] = image
+    return result
 
 
 class MVTecDRAEMTestDataset(Dataset):
@@ -94,7 +74,8 @@ class MVTecDRAEMTestDataset(Dataset):
         if self.resize_shape is not None:
             image = cv2.resize(image, dsize=(self.resize_shape, self.resize_shape))
             mask = cv2.resize(mask, dsize=(256, 256))
-            # print(mask)
+
+        image = pasteC(image)
 
         image = image / 255.0
         mask = mask / 255.0
@@ -108,14 +89,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        # imagenet_30 = IMAGENET30_TEST_DATASET()
-        # random_index = int(random.random() * len(imagenet_30))
-        # random_image_path = imagenet_30[random_index]
-        # imagenet30_img = cv2.imread(random_image_path, cv2.IMREAD_COLOR)
-        # imagenet30_img = cv2.resize(imagenet30_img, dsize=(256, 256)) / 255.0
-        # imagenet30_img = np.array(imagenet30_img).reshape((imagenet30_img.shape[0], imagenet30_img.shape[1], 3)).astype(
-        #     np.float32)
-        # imagenet30_img = np.transpose(imagenet30_img, (2, 0, 1))
+
 
         if torch.is_tensor(idx):
             idx = idx.tolist()

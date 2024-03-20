@@ -54,7 +54,7 @@ def plot_images_and_save(dataloader, subclass_name, shrink_factor, grid_size=(5,
 
 
 def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
-    shrink_factors = [1, 0.8, 0.98, 0.9, 0.95, 0.85]
+    shrink_factors = [1, 0.98, 0.95, 0.9, 0.85, 0.8]
 
     factor_stats = {}
 
