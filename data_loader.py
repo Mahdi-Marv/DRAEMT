@@ -36,17 +36,16 @@ def pasteC(image):
     imagenet_30 = IMAGENET30_TEST_DATASET()
     random_index = int(random.random() * len(imagenet_30))
     imagenet30_img = imagenet_30[random_index]
-    print(imagenet30_img.shape)
     imagenet30_img = cv2.resize(imagenet30_img, dsize=(256, 256))
 
-    h, w = image.shape
+    h, w, _ = image.shape
 
-    hh, ww = imagenet30_img.shape
+    hh, ww, _ = imagenet30_img.shape
 
     # compute xoff and yoff for placement of upper left corner of resized image
     yoff = round((hh - h) / 2)
     xoff = round((ww - w) / 2)
-    print(yoff, xoff)
+    # print(yoff, xoff)
 
     result = imagenet30_img.copy()
     result[yoff:yoff + h, xoff:xoff + w] = image
