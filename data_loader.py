@@ -155,8 +155,9 @@ class MVTecDRAEMTestDataset(Dataset):
 
         # print(has_anomaly)
 
-        img1 = paste2(imagenet30_img, image)
-        sample = {'image': img1, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
+        # img1 = paste2(imagenet30_img, image)
+
+        sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
         return sample
 
