@@ -36,6 +36,7 @@ def pasteC(image):
     imagenet_30 = IMAGENET30_TEST_DATASET()
     random_index = int(random.random() * len(imagenet_30))
     imagenet30_img = imagenet_30[random_index]
+    print(imagenet30_img.shape)
     imagenet30_img = cv2.resize(imagenet30_img, dsize=(256, 256))
 
     h, w = image.shape
