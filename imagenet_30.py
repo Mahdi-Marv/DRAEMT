@@ -43,4 +43,5 @@ class IMAGENET30_TEST_DATASET(Dataset):
         label = self.targets[idx]
         print(img_path)
         img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        print(img.shape)
         return img, label
