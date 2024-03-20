@@ -107,14 +107,15 @@ class MVTecDRAEMTestDataset(Dataset):
         return image, mask
 
     def __getitem__(self, idx):
-        imagenet_30 = IMAGENET30_TEST_DATASET()
-        random_index = int(random.random() * len(imagenet_30))
-        random_image_path = imagenet_30[random_index]
-        imagenet30_img = cv2.imread(random_image_path, cv2.IMREAD_COLOR)
-        imagenet30_img = cv2.resize(imagenet30_img, dsize=(256, 256)) / 255.0
-        imagenet30_img = np.array(imagenet30_img).reshape((imagenet30_img.shape[0], imagenet30_img.shape[1], 3)).astype(
-            np.float32)
-        imagenet30_img = np.transpose(imagenet30_img, (2, 0, 1))
+
+        # imagenet_30 = IMAGENET30_TEST_DATASET()
+        # random_index = int(random.random() * len(imagenet_30))
+        # random_image_path = imagenet_30[random_index]
+        # imagenet30_img = cv2.imread(random_image_path, cv2.IMREAD_COLOR)
+        # imagenet30_img = cv2.resize(imagenet30_img, dsize=(256, 256)) / 255.0
+        # imagenet30_img = np.array(imagenet30_img).reshape((imagenet30_img.shape[0], imagenet30_img.shape[1], 3)).astype(
+        #     np.float32)
+        # imagenet30_img = np.transpose(imagenet30_img, (2, 0, 1))
 
         if torch.is_tensor(idx):
             idx = idx.tolist()

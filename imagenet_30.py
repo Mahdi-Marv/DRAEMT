@@ -41,4 +41,5 @@ class IMAGENET30_TEST_DATASET(Dataset):
     def __getitem__(self, idx):
         img_path = self.img_path_list[idx]
         label = self.targets[idx]
+
         return img_path, label
