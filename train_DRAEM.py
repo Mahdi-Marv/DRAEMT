@@ -1,5 +1,5 @@
 import torch
-from data_loader import MVTecDRAEMTrainDataset
+from data_loader_origin import MVTecDRAEMTrainDataset
 from torch.utils.data import DataLoader
 from torch import optim
 from tensorboard_visualizer import TensorboardVisualizer
