@@ -15,6 +15,8 @@ class MVTecDRAEMTestDataset(Dataset):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
         self.resize_shape = resize_shape
+        self.path = 'wbc/segmentation_WBC-master/Dataset 2'
+        self.img_labels = pd.read_csv('dataset2_test.csv')
 
     def __len__(self):
         return len(self.images)
@@ -40,22 +42,18 @@ class MVTecDRAEMTestDataset(Dataset):
         return image, mask
 
     def __getitem__(self, idx):
+
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_path = self.images[idx]
-        dir_path, file_name = os.path.split(img_path)
-        base_dir = os.path.basename(dir_path)
-        if base_dir == 'good':
-            image, mask = self.transform_image(img_path, None)
-            has_anomaly = np.array([0], dtype=np.float32)
-        else:
-            mask_path = os.path.join(dir_path, '../../ground_truth/')
-            mask_path = os.path.join(mask_path, base_dir)
-            mask_file_name = file_name.split(".")[0] + "_mask.png"
-            mask_path = os.path.join(mask_path, mask_file_name)
-            image, mask = self.transform_image(img_path, mask_path)
-            has_anomaly = np.array([1], dtype=np.float32)
+        idx = np.random.randint(0, len(self.img_labels))
+        img_path = f"{self.path}/{str(self.img_labels.iloc[idx, 0]).zfill(3)}.bmp"
+        mask_path = f"{self.path}/{str(self.img_labels.iloc[idx, 0]).zfill(3)}.png"
+        image, mask = self.transform_image(img_path, mask_path)
+
+        label = self.img_labels.iloc[idx, 1]
+
+        has_anomaly = 0 if label == 1 else 1
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
