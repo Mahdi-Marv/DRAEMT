@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 import os
+import random
+import matplotlib.pyplot as plt
 
 def write_results_to_file(run_name, image_auc, pixel_auc, image_ap, pixel_ap):
     if not os.path.exists('./outputs/'):
@@ -36,6 +38,45 @@ def write_results_to_file(run_name, image_auc, pixel_auc, image_ap, pixel_ap):
     with open("./outputs/results.txt",'a+') as file:
         file.write(fin_str)
 
+
+def show_images(images, labels, dataset_name):
+    num_images = len(images)
+    rows = int(num_images / 5) + 1
+
+    fig, axes = plt.subplots(rows, 5, figsize=(15, rows * 3))
+
+    for i, ax in enumerate(axes.flatten()):
+        if i < num_images:
+            ax.imshow(images[i].permute(1, 2, 0))  # permute to (H, W, C) for displaying RGB images
+            ax.set_title(f"Label: {labels[i]}")
+        ax.axis("off")
+
+    plt.savefig(f'{dataset_name}_visualization.png')
+
+
+def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
+    print(f"Start visualization of clean dataset: {dataset_name}")
+    # Choose 20 random indices from the dataset
+    if len(dataset) > 20:
+        random_indices = random.sample(range(len(dataset)), 20)
+    else:
+        random_indices = [i for i in range(len(dataset))]
+
+    # Retrieve corresponding samples
+    random_samples = [dataset[i] for i in random_indices]
+
+    # Separate images and labels
+    images, labels = zip(*random_samples)
+
+    # Convert PIL images to PyTorch tensors
+#     transform = transforms.ToTensor()
+#     images = [transform(image) for image in images]
+
+    # Convert labels to PyTorch tensor
+    labels = torch.tensor(labels)
+
+    # Show the 20 random samples
+    show_images(images, labels, dataset_name)
 
 def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
     obj_ap_pixel_list = []
