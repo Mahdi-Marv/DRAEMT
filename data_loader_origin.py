@@ -8,12 +8,13 @@ import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
 import pandas as pd
 
+
 class MVTecDRAEMTestDataset(Dataset):
 
     def __init__(self, root_dir, resize_shape=None):
         self.root_dir = root_dir
-        self.images = sorted(glob.glob(root_dir+"/*/*.png"))
-        self.resize_shape=resize_shape
+        self.images = sorted(glob.glob(root_dir + "/*/*.png"))
+        self.resize_shape = resize_shape
 
     def __len__(self):
         return len(self.images)
@@ -23,7 +24,7 @@ class MVTecDRAEMTestDataset(Dataset):
         if mask_path is not None:
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         else:
-            mask = np.zeros((image.shape[0],image.shape[1]))
+            mask = np.zeros((image.shape[0], image.shape[1]))
         if self.resize_shape != None:
             image = cv2.resize(image, dsize=(self.resize_shape[1], self.resize_shape[0]))
             mask = cv2.resize(mask, dsize=(self.resize_shape[1], self.resize_shape[0]))
@@ -51,16 +52,14 @@ class MVTecDRAEMTestDataset(Dataset):
         else:
             mask_path = os.path.join(dir_path, '../../ground_truth/')
             mask_path = os.path.join(mask_path, base_dir)
-            mask_file_name = file_name.split(".")[0]+"_mask.png"
+            mask_file_name = file_name.split(".")[0] + "_mask.png"
             mask_path = os.path.join(mask_path, mask_file_name)
             image, mask = self.transform_image(img_path, mask_path)
             has_anomaly = np.array([1], dtype=np.float32)
 
-
-        sample = {'image': image, 'has_anomaly': has_anomaly,'mask': mask, 'idx': idx}
+        sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
 
         return sample
-
 
 
 class MVTecDRAEMTrainDataset(Dataset):
@@ -73,33 +72,31 @@ class MVTecDRAEMTrainDataset(Dataset):
                 on a sample.
         """
         self.root_dir = root_dir
-        self.resize_shape=resize_shape
+        self.resize_shape = resize_shape
 
         self.path = 'wbc/segmentation_WBC-master/Dataset 2'
         self.img_labels = pd.read_csv('dataset2_train.csv')
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path+"/*/*.jpg"))
+        self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
-        self.augmenters = [iaa.GammaContrast((0.5,2.0),per_channel=True),
-                      iaa.MultiplyAndAddToBrightness(mul=(0.8,1.2),add=(-30,30)),
-                      iaa.pillike.EnhanceSharpness(),
-                      iaa.AddToHueAndSaturation((-50,50),per_channel=True),
-                      iaa.Solarize(0.5, threshold=(32,128)),
-                      iaa.Posterize(),
-                      iaa.Invert(),
-                      iaa.pillike.Autocontrast(),
-                      iaa.pillike.Equalize(),
-                      iaa.Affine(rotate=(-45, 45))
-                      ]
+        self.augmenters = [iaa.GammaContrast((0.5, 2.0), per_channel=True),
+                           iaa.MultiplyAndAddToBrightness(mul=(0.8, 1.2), add=(-30, 30)),
+                           iaa.pillike.EnhanceSharpness(),
+                           iaa.AddToHueAndSaturation((-50, 50), per_channel=True),
+                           iaa.Solarize(0.5, threshold=(32, 128)),
+                           iaa.Posterize(),
+                           iaa.Invert(),
+                           iaa.pillike.Autocontrast(),
+                           iaa.pillike.Equalize(),
+                           iaa.Affine(rotate=(-45, 45))
+                           ]
 
         self.rot = iaa.Sequential([iaa.Affine(rotate=(-90, 90))])
 
-
     def __len__(self):
         return len(self.path)
-
 
     def randAugmenter(self):
         aug_ind = np.random.choice(np.arange(len(self.augmenters)), 3, replace=False)
@@ -136,15 +133,15 @@ class MVTecDRAEMTrainDataset(Dataset):
         no_anomaly = torch.rand(1).numpy()[0]
         if no_anomaly > 0.5:
             image = image.astype(np.float32)
-            return image, np.zeros_like(perlin_thr, dtype=np.float32), np.array([0.0],dtype=np.float32)
+            return image, np.zeros_like(perlin_thr, dtype=np.float32), np.array([0.0], dtype=np.float32)
         else:
             augmented_image = augmented_image.astype(np.float32)
             msk = (perlin_thr).astype(np.float32)
-            augmented_image = msk * augmented_image + (1-msk)*image
+            augmented_image = msk * augmented_image + (1 - msk) * image
             has_anomaly = 1.0
             if np.sum(msk) == 0:
-                has_anomaly=0.0
-            return augmented_image, msk, np.array([has_anomaly],dtype=np.float32)
+                has_anomaly = 0.0
+            return augmented_image, msk, np.array([has_anomaly], dtype=np.float32)
 
     def transform_image(self, image_path, anomaly_source_path):
         image = cv2.imread(image_path)
@@ -168,7 +165,8 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         anomaly_source_idx = torch.randint(0, len(self.anomaly_source_paths), (1,)).item()
         image, augmented_image, anomaly_mask, has_anomaly = self.transform_image(img_path,
-                                                                           self.anomaly_source_paths[anomaly_source_idx])
+                                                                                 self.anomaly_source_paths[
+                                                                                     anomaly_source_idx])
         sample = {'image': image, "anomaly_mask": anomaly_mask,
                   'augmented_image': augmented_image, 'has_anomaly': has_anomaly, 'idx': idx}
 
