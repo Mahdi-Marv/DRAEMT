@@ -7,6 +7,7 @@ import glob
 import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
 import pandas as pd
+from pathlib import Path
 
 
 class MVTecDRAEMTestDataset(Dataset):
@@ -75,7 +76,11 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.path = 'wbc/segmentation_WBC-master/Dataset 1'
         self.img_labels = pd.read_csv('dataset1_train.csv')
 
-        # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
+        my_file = Path("/kaggle/input/describable-textures-dataset-dtd/dtd/images/banded/banded_0002.jpg")
+        if my_file.is_file():
+            print("exists")
+        else:
+            print("does not exist")
 
         print(anomaly_source_path)
 
