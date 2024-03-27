@@ -77,6 +77,8 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
+        print(anomaly_source_path)
+
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
         self.augmenters = [iaa.GammaContrast((0.5, 2.0), per_channel=True),
@@ -162,6 +164,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         img_path = f"{self.path}/{str(self.img_labels.iloc[idx, 0]).zfill(3)}.bmp"
 
         anomaly_source_idx = torch.randint(0, len(self.anomaly_source_paths), (1,)).item()
+
         image, augmented_image, anomaly_mask, has_anomaly = self.transform_image(img_path,
                                                                                  self.anomaly_source_paths[
                                                                                      anomaly_source_idx])
