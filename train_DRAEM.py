@@ -159,5 +159,6 @@ if __name__ == "__main__":
     else:
         picked_classes = obj_batch[int(args.obj_id)]
     picked_classes = ['data1']
+    print(picked_classes)
     with torch.cuda.device(args.gpu_id):
         train_on_device(picked_classes, args)
