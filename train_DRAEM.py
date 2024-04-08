@@ -146,7 +146,7 @@ def train_on_device(obj_names, args):
             test_model(model_cpu, model_seg_cpu)
         tqdm.write(f"Epoch: {epoch}")
 
-        for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
+        for i_batch, sample_batched in enumerate(dataloader):
             gray_batch = sample_batched["image"].cuda()
             aug_gray_batch = sample_batched["augmented_image"].cuda()
             anomaly_mask = sample_batched["anomaly_mask"].cuda()
