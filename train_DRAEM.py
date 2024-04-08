@@ -17,8 +17,7 @@ def test_model(model, model_seg):
 
     img_dim = 256
 
-    dataset = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/",
-                                                resize_shape=[img_dim, img_dim])
+    dataset = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/", resize_shape=[img_dim, img_dim])
     dataloader = DataLoader(dataset, batch_size=1,
                             shuffle=False, num_workers=0)
 
@@ -72,14 +71,14 @@ def test_model(model, model_seg):
         # total_gt_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_true_mask
         mask_cnt += 1
 
-    anomaly_score_prediction = np.array(anomaly_score_prediction)
-    anomaly_score_gt = np.array(anomaly_score_gt)
-    auroc = roc_auc_score(anomaly_score_gt, anomaly_score_prediction)
+        anomaly_score_prediction = np.array(anomaly_score_prediction)
+        anomaly_score_gt = np.array(anomaly_score_gt)
+        auroc = roc_auc_score(anomaly_score_gt, anomaly_score_prediction)
 
-    obj_auroc_image_list.append(auroc)
-    print("AUC Image:  " + str(auroc))
+        obj_auroc_image_list.append(auroc)
+        print("AUC Image:  " + str(auroc))
 
-    print("==============================")
+        print("==============================")
 
 
 def get_lr(optimizer):
