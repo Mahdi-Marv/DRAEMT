@@ -81,6 +81,75 @@ def test_model(model, model_seg):
 
     print("==============================")
 
+def test_model_2(model, model_seg):
+    obj_auroc_image_list = []
+
+    img_dim = 256
+
+    # Ensure your dataset and dataloader are set up for CPU operations
+    dataset = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/",
+                                                resize_shape=[img_dim, img_dim])
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
+
+    total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
+    mask_cnt = 0
+
+    anomaly_score_gt = []
+    anomaly_score_prediction = []
+
+    # Initialize tensors for CPU
+    display_images = torch.zeros((16, 3, 256, 256))
+    display_gt_images = torch.zeros((16, 3, 256, 256))
+    display_out_masks = torch.zeros((16, 1, 256, 256))
+    display_in_masks = torch.zeros((16, 1, 256, 256))
+    cnt_display = 0
+    display_indices = np.random.randint(len(dataloader), size=(16,))
+
+    for i_batch, sample_batched in enumerate(dataloader):
+        # Move tensors to CPU explicitly if necessary
+        gray_batch = sample_batched["image"]  # Assuming your dataloader already loads tensors to CPU
+
+        is_normal = sample_batched["has_anomaly"].detach().numpy()[0, 0]
+        anomaly_score_gt.append(is_normal)
+
+        # Ensure models are in eval mode and moved to CPU
+        model.eval()
+        model.cpu()
+        model_seg.eval()
+        model_seg.cpu()
+
+        gray_rec = model(gray_batch)
+        joined_in = torch.cat((gray_rec.detach(), gray_batch), dim=1)
+
+        out_mask = model_seg(joined_in)
+        out_mask_sm = torch.softmax(out_mask, dim=1)
+
+        if i_batch in display_indices:
+            t_mask = out_mask_sm[:, 1:, :, :]
+            display_images[cnt_display] = gray_rec[0]
+            display_gt_images[cnt_display] = gray_batch[0]
+            display_out_masks[cnt_display] = t_mask[0]
+            cnt_display += 1
+
+        out_mask_cv = out_mask_sm[0, 1, :, :].detach().cpu().numpy()
+
+        out_mask_averaged = torch.nn.functional.avg_pool2d(out_mask_sm[:, 1:, :, :], 21, stride=1, padding=21 // 2).detach().numpy()
+        image_score = np.max(out_mask_averaged)
+
+        anomaly_score_prediction.append(image_score)
+
+        flat_out_mask = out_mask_cv.flatten()
+        total_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_out_mask
+        mask_cnt += 1
+
+    anomaly_score_prediction = np.array(anomaly_score_prediction)
+    anomaly_score_gt = np.array(anomaly_score_gt)
+    auroc = roc_auc_score(anomaly_score_gt, anomaly_score_prediction)
+
+    obj_auroc_image_list.append(auroc)
+    print("AUC Image:  " + str(auroc))
+    print("==============================")
+
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
@@ -138,7 +207,7 @@ def train_on_device(obj_names, args):
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
         e_num += 1
         if e_num%5==0:
-            test_model(model, model_seg)
+            test_model_2(model, model_seg)
         tqdm.write(f"Epoch: {epoch}")
 
         for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
