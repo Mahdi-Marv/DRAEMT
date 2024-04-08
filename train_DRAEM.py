@@ -13,15 +13,12 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 
 
-def test_model(model, model_seg):
+def test_model(model, model_seg, dataset, dataloader):
     obj_auroc_image_list = []
 
     img_dim = 256
 
-    dataset = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/",
-                                                resize_shape=[img_dim, img_dim])
-    dataloader = DataLoader(dataset, batch_size=1,
-                            shuffle=True, num_workers=0)
+
 
     total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
     mask_cnt = 0
@@ -137,12 +134,18 @@ def train_on_device(obj_names, args):
     n_iter = 0
     e_num = 0
     l = 0
+
+    dataset_test = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/",
+                                                resize_shape=[256, 256])
+
+    dataloader_test = DataLoader(dataset, batch_size=1,
+                            shuffle=True, num_workers=0)
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
         torch.cuda.empty_cache()
         gc.collect()
         e_num += 1
         if e_num % 10 == 0:
-            test_model(model, model_seg)
+            test_model(model, model_seg, dataset_test, dataloader_test)
         tqdm.write(f"Epoch: {epoch}")
 
         for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
