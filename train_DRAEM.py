@@ -143,7 +143,7 @@ def train_on_device(obj_names, args):
         if e_num%2==0:
             model_cpu = model.cpu()
             model_seg_cpu = model_seg.cpu()
-            test_model(model_cpu, model_seg_cpu)
+            test_model(model, model_seg)
         tqdm.write(f"Epoch: {epoch}")
 
         for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
