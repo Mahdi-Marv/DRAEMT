@@ -28,16 +28,16 @@ def test_model(model, model_seg):
     anomaly_score_gt = []
     anomaly_score_prediction = []
 
-    display_images = torch.zeros((16, 3, 256, 256))
-    display_gt_images = torch.zeros((16, 3, 256, 256))
-    display_out_masks = torch.zeros((16, 1, 256, 256))
-    display_in_masks = torch.zeros((16, 1, 256, 256))
+    display_images = torch.zeros((16, 3, 256, 256)).cuda()
+    display_gt_images = torch.zeros((16, 3, 256, 256)).cuda()
+    display_out_masks = torch.zeros((16, 1, 256, 256)).cuda()
+    display_in_masks = torch.zeros((16, 1, 256, 256)).cuda()
     cnt_display = 0
     display_indices = np.random.randint(len(dataloader), size=(16,))
 
     for i_batch, sample_batched in enumerate(dataloader):
 
-        gray_batch = sample_batched["image"]
+        gray_batch = sample_batched["image"].cuda()
 
         is_normal = sample_batched["has_anomaly"].detach().numpy()[0, 0]
         anomaly_score_gt.append(is_normal)
@@ -146,7 +146,7 @@ def train_on_device(obj_names, args):
             test_model(model_cpu, model_seg_cpu)
         tqdm.write(f"Epoch: {epoch}")
 
-        for i_batch, sample_batched in enumerate(dataloader):
+        for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
             gray_batch = sample_batched["image"].cuda()
             aug_gray_batch = sample_batched["augmented_image"].cuda()
             anomaly_mask = sample_batched["anomaly_mask"].cuda()
