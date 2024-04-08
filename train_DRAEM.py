@@ -21,7 +21,7 @@ def test_model(model, model_seg):
     dataset = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/",
                                                 resize_shape=[img_dim, img_dim])
     dataloader = DataLoader(dataset, batch_size=1,
-                            shuffle=False, num_workers=0)
+                            shuffle=True, num_workers=0)
 
     total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
     mask_cnt = 0
