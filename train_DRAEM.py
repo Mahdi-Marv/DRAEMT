@@ -141,8 +141,9 @@ def train_on_device(obj_names, args):
         gc.collect()
         e_num += 1
         if e_num%2==0:
-
-            test_model(model, model_seg)
+            model_cpu = model.detach().cpu()
+            model_seg_cpu = model_seg.detach().cpu()
+            test_model(model_cpu, model_seg_cpu)
         tqdm.write(f"Epoch: {epoch}")
 
         for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
