@@ -141,7 +141,7 @@ def train_on_device(obj_names, args):
         torch.cuda.empty_cache()
         gc.collect()
         e_num += 1
-        if e_num % 2 == 0:
+        if e_num % 10 == 0:
             test_model(model, model_seg)
         tqdm.write(f"Epoch: {epoch}")
 
