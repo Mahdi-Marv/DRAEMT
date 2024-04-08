@@ -141,8 +141,8 @@ def train_on_device(obj_names, args):
         gc.collect()
         e_num += 1
         if e_num%2==0:
-            model_cpu = model.detach().cpu()
-            model_seg_cpu = model_seg.detach().cpu()
+            model_cpu = model.cpu()
+            model_seg_cpu = model_seg.cpu()
             test_model(model_cpu, model_seg_cpu)
         tqdm.write(f"Epoch: {epoch}")
 
