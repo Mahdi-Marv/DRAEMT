@@ -3,7 +3,7 @@ import numpy as np
 from torch.utils.data import Dataset
 import torch
 import cv2
-import glob
+from glob
 import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
 import matplotlib.pyplot as plt
@@ -77,7 +77,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        self.image_paths = glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
+        self.image_paths = glob.glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path+"/*/*.jpg"))
 
