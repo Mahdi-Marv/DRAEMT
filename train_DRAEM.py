@@ -10,9 +10,11 @@ from loss import FocalLoss, SSIM
 import os
 from tqdm import tqdm
 
+
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
+
 
 def weights_init(m):
     classname = m.__class__.__name__
@@ -22,18 +24,17 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
-def train_on_device(obj_names, args):
 
+def train_on_device(obj_names, args):
     if not os.path.exists(args.checkpoint_path):
         os.makedirs(args.checkpoint_path)
 
     if not os.path.exists(args.log_path):
         os.makedirs(args.log_path)
 
-
     run_name = 'DRAEM_test'
 
-    visualizer = TensorboardVisualizer(log_dir=os.path.join(args.log_path, run_name+"/"))
+    visualizer = TensorboardVisualizer(log_dir=os.path.join(args.log_path, run_name + "/"))
 
     model = ReconstructiveSubNetwork(in_channels=3, out_channels=3)
     model.cuda()
@@ -44,10 +45,11 @@ def train_on_device(obj_names, args):
     model_seg.apply(weights_init)
 
     optimizer = torch.optim.Adam([
-                                  {"params": model.parameters(), "lr": args.lr},
-                                  {"params": model_seg.parameters(), "lr": args.lr}])
+        {"params": model.parameters(), "lr": args.lr},
+        {"params": model_seg.parameters(), "lr": args.lr}])
 
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer,[args.epochs*0.8,args.epochs*0.9],gamma=0.2, last_epoch=-1)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [args.epochs * 0.8, args.epochs * 0.9], gamma=0.2,
+                                               last_epoch=-1)
 
     loss_l2 = torch.nn.modules.loss.MSELoss()
     loss_ssim = SSIM()
@@ -61,8 +63,14 @@ def train_on_device(obj_names, args):
     # dataloader = data_loader.get_isic_loader()
 
     n_iter = 0
+    e_num = 0
+    l = 0
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
+        e_num += 1
         tqdm.write(f"Epoch: {epoch}")
+
+        if e_num % 5 == 0:
+            print(f"epoch {e_num}: ", l)
         for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
             gray_batch = sample_batched["image"].cuda()
             aug_gray_batch = sample_batched["augmented_image"].cuda()
@@ -74,7 +82,7 @@ def train_on_device(obj_names, args):
             out_mask = model_seg(joined_in)
             out_mask_sm = torch.softmax(out_mask, dim=1)
 
-            l2_loss = loss_l2(gray_rec,gray_batch)
+            l2_loss = loss_l2(gray_rec, gray_batch)
             ssim_loss = loss_ssim(gray_rec, gray_batch)
 
             segment_loss = loss_focal(out_mask_sm, anomaly_mask)
@@ -84,8 +92,9 @@ def train_on_device(obj_names, args):
 
             loss.backward()
             optimizer.step()
-            if n_iter % 5 == 0:
-                tqdm.write(f'Iter {n_iter}: Loss = {loss.item():.4f}')
+
+            l = loss.item()
+
 
             if args.visualize and n_iter % 200 == 0:
                 visualizer.plot_loss(l2_loss, n_iter, loss_name='l2_loss')
@@ -99,16 +108,15 @@ def train_on_device(obj_names, args):
                 visualizer.visualize_image_batch(anomaly_mask, n_iter, image_name='mask_target')
                 visualizer.visualize_image_batch(t_mask, n_iter, image_name='mask_out')
 
-
-            n_iter +=1
+            n_iter += 1
 
         scheduler.step()
 
-        torch.save(model.state_dict(), os.path.join(args.checkpoint_path, run_name+".pckl"))
-        torch.save(model_seg.state_dict(), os.path.join(args.checkpoint_path, run_name+"_seg.pckl"))
+        torch.save(model.state_dict(), os.path.join(args.checkpoint_path, run_name + ".pckl"))
+        torch.save(model_seg.state_dict(), os.path.join(args.checkpoint_path, run_name + "_seg.pckl"))
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -144,25 +152,24 @@ if __name__=="__main__":
 
     if int(args.obj_id) == -1:
         obj_list = ['capsule',
-                     'bottle',
-                     'carpet',
-                     'leather',
-                     'pill',
-                     'transistor',
-                     'tile',
-                     'cable',
-                     'zipper',
-                     'toothbrush',
-                     'metal_nut',
-                     'hazelnut',
-                     'screw',
-                     'grid',
-                     'wood'
-                     ]
+                    'bottle',
+                    'carpet',
+                    'leather',
+                    'pill',
+                    'transistor',
+                    'tile',
+                    'cable',
+                    'zipper',
+                    'toothbrush',
+                    'metal_nut',
+                    'hazelnut',
+                    'screw',
+                    'grid',
+                    'wood'
+                    ]
         picked_classes = obj_list
     else:
         picked_classes = obj_batch[int(args.obj_id)]
 
     with torch.cuda.device(args.gpu_id):
         train_on_device(picked_classes, args)
-
