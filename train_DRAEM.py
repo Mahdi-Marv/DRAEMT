@@ -63,7 +63,7 @@ def train_on_device(obj_names, args):
     n_iter = 0
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
         print("Epoch: "+str(epoch))
-        for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Epoch {epoch} Progress', leave=False)):
+        for i_batch, sample_batched in enumerate(dataloader):
             gray_batch = sample_batched["image"].cuda()
             aug_gray_batch = sample_batched["augmented_image"].cuda()
             anomaly_mask = sample_batched["anomaly_mask"].cuda()
