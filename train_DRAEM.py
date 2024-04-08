@@ -12,12 +12,14 @@ from tqdm import tqdm
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 
+
 def test_model(model, model_seg):
     obj_auroc_image_list = []
 
     img_dim = 256
 
-    dataset = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/", resize_shape=[img_dim, img_dim])
+    dataset = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/",
+                                                resize_shape=[img_dim, img_dim])
     dataloader = DataLoader(dataset, batch_size=1,
                             shuffle=False, num_workers=0)
 
@@ -139,9 +141,7 @@ def train_on_device(obj_names, args):
         torch.cuda.empty_cache()
         gc.collect()
         e_num += 1
-        if e_num%2==0:
-            model_cpu = model.cpu()
-            model_seg_cpu = model_seg.cpu()
+        if e_num % 2 == 0:
             test_model(model, model_seg)
         tqdm.write(f"Epoch: {epoch}")
 
@@ -246,5 +246,3 @@ if __name__ == "__main__":
 
     with torch.cuda.device(args.gpu_id):
         train_on_device(picked_classes, args)
-
-
