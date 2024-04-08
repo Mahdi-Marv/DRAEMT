@@ -42,6 +42,9 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
     obj_auroc_pixel_list = []
     obj_ap_image_list = []
     obj_auroc_image_list = []
+
+
+
     for obj_name in obj_names:
         img_dim = 256
         run_name = base_model_name+"_"+obj_name+'_'
@@ -81,8 +84,8 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
 
             is_normal = sample_batched["has_anomaly"].detach().numpy()[0 ,0]
             anomaly_score_gt.append(is_normal)
-            true_mask = sample_batched["mask"]
-            true_mask_cv = true_mask.detach().numpy()[0, :, :, :].transpose((1, 2, 0))
+            # true_mask = sample_batched["mask"]
+            # true_mask_cv = true_mask.detach().numpy()[0, :, :, :].transpose((1, 2, 0))
 
             gray_rec = model(gray_batch)
             joined_in = torch.cat((gray_rec.detach(), gray_batch), dim=1)
@@ -96,7 +99,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
                 display_images[cnt_display] = gray_rec[0]
                 display_gt_images[cnt_display] = gray_batch[0]
                 display_out_masks[cnt_display] = t_mask[0]
-                display_in_masks[cnt_display] = true_mask[0]
+                # display_in_masks[cnt_display] = true_mask[0]
                 cnt_display += 1
 
 
@@ -108,10 +111,10 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
 
             anomaly_score_prediction.append(image_score)
 
-            flat_true_mask = true_mask_cv.flatten()
+            # flat_true_mask = true_mask_cv.flatten()
             flat_out_mask = out_mask_cv.flatten()
             total_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_out_mask
-            total_gt_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_true_mask
+            # total_gt_pixel_scores[mask_cnt * img_dim * img_dim:(mask_cnt + 1) * img_dim * img_dim] = flat_true_mask
             mask_cnt += 1
 
         anomaly_score_prediction = np.array(anomaly_score_prediction)

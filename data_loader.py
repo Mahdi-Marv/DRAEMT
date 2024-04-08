@@ -6,6 +6,8 @@ import cv2
 import glob
 import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
+import matplotlib.pyplot as plt
+import random
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -73,7 +75,9 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.root_dir = root_dir
         self.resize_shape=resize_shape
 
-        self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
+        # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
+
+        self.image_paths = glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path+"/*/*.jpg"))
 
@@ -165,3 +169,91 @@ class MVTecDRAEMTrainDataset(Dataset):
                   'augmented_image': augmented_image, 'has_anomaly': has_anomaly, 'idx': idx}
 
         return sample
+
+
+def get_isic_loader():
+
+
+    train_path = glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
+    train_label = [0] * len(train_path)
+    test_anomaly_path = glob('/kaggle/input/isic-task3-dataset/dataset/test/ABNORMAL/*')
+    test_anomaly_label = [1] * len(test_anomaly_path)
+    test_normal_path = glob('/kaggle/input/isic-task3-dataset/dataset/test/NORMAL/*')
+    test_normal_label = [0] * len(test_normal_path)
+
+
+
+    test_label = test_anomaly_label + test_normal_label
+    test_path = test_anomaly_path + test_normal_path
+
+    train_set = ISIC2018(image_path=train_path, labels=train_label, transform=transform)
+    trainset_1 = ISIC2018(image_path=train_path, labels=train_label, transform=Transform())
+    test_set = ISIC2018(image_path=test_path, labels=test_label, transform=transform)
+
+    visualize_random_samples_from_clean_dataset(train_set, "trainset")
+    visualize_random_samples_from_clean_dataset(test_set, "testset")
+
+
+
+
+class ISIC2018(Dataset):
+    def __init__(self, image_path, labels, transform=None, count=-1, anomaly_source_path=''):
+        self.transform = transform
+        self.image_files = image_path
+        self.labels = labels
+        self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
+        if count != -1:
+            if count < len(self.image_files):
+                self.image_files = self.image_files[:count]
+                self.labels = self.labels[:count]
+            else:
+                t = len(self.image_files)
+                for i in range(count - t):
+                    self.image_files.append(random.choice(self.image_files[:t]))
+                    self.labels.append(random.choice(self.labels[:t]))
+
+    def __getitem__(self, index):
+        image_file = self.image_files[index]
+        image = Image.open(image_file)
+        image = image.convert('RGB')
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, self.labels[index]
+
+    def __len__(self):
+        return len(self.image_files)
+
+
+def show_images(images, labels, dataset_name):
+    num_images = len(images)
+    rows = int(num_images / 5) + 1
+
+    fig, axes = plt.subplots(rows, 5, figsize=(15, rows * 3))
+
+    for i, ax in enumerate(axes.flatten()):
+        if i < num_images:
+            ax.imshow(images[i].permute(1, 2, 0))  # permute to (H, W, C) for displaying RGB images
+            ax.set_title(f"Label: {labels[i]}")
+        ax.axis("off")
+
+    plt.savefig(f'{dataset_name}_visualization.png')
+
+
+def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
+    print(f"Start visualization of clean dataset: {dataset_name}")
+    # Choose 20 random indices from the dataset
+    if len(dataset) > 20:
+        random_indices = random.sample(range(len(dataset)), 20)
+    else:
+        random_indices = [i for i in range(len(dataset))]
+
+    # Retrieve corresponding samples
+    random_samples = [dataset[i] for i in random_indices]
+
+    # Separate images and labels
+    images, labels = zip(*random_samples)
+
+    labels = torch.tensor(labels)
+
+    # Show the 20 random samples
+    show_images(images, labels, dataset_name)
