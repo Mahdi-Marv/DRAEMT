@@ -84,6 +84,8 @@ def train_on_device(obj_names, args):
 
             loss.backward()
             optimizer.step()
+            if n_iter % 5 == 0:
+                tqdm.write(f'Iter {n_iter}: Loss = {loss.item():.4f}')
 
             if args.visualize and n_iter % 200 == 0:
                 visualizer.plot_loss(l2_loss, n_iter, loss_name='l2_loss')
