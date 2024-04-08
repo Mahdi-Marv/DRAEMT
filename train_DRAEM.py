@@ -1,5 +1,5 @@
 import torch
-
+import gc
 import data_loader
 from data_loader import MVTecDRAEMTrainDataset
 from torch.utils.data import DataLoader
@@ -137,8 +137,11 @@ def train_on_device(obj_names, args):
     e_num = 0
     l = 0
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
+        torch.cuda.empty_cache()
+        gc.collect()
         e_num += 1
         if e_num%5==0:
+
             test_model(model, model_seg)
         tqdm.write(f"Epoch: {epoch}")
 
