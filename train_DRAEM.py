@@ -8,6 +8,7 @@ from tensorboard_visualizer import TensorboardVisualizer
 from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 from loss import FocalLoss, SSIM
 import os
+from tqdm import tqdm
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
@@ -60,9 +61,9 @@ def train_on_device(obj_names, args):
     # dataloader = data_loader.get_isic_loader()
 
     n_iter = 0
-    for epoch in range(args.epochs):
+    for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
         print("Epoch: "+str(epoch))
-        for i_batch, sample_batched in enumerate(dataloader):
+        for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Epoch {epoch} Progress', leave=False)):
             gray_batch = sample_batched["image"].cuda()
             aug_gray_batch = sample_batched["augmented_image"].cuda()
             anomaly_mask = sample_batched["anomaly_mask"].cuda()
