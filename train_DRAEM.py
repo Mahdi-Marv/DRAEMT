@@ -70,7 +70,7 @@ def train_on_device(obj_names, args):
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
         e_num += 1
         if e_num%5==0:
-            test(model, model_seg)
+            test_model(model, model_seg)
         tqdm.write(f"Epoch: {epoch}")
 
         for i_batch, sample_batched in enumerate(tqdm(dataloader, desc=f'Batch Progress', leave=True, position=0)):
@@ -176,7 +176,7 @@ if __name__ == "__main__":
         train_on_device(picked_classes, args)
 
 
-def test(model, model_seg):
+def test_model(model, model_seg):
     obj_auroc_image_list = []
 
     img_dim = 256
