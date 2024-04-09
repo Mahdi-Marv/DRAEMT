@@ -41,7 +41,7 @@ class MVTecDRAEMTestDataset(Dataset):
             self.test_label = shifted_test_label
 
     def __len__(self):
-        return len(self.images)
+        return len(self.test_path)
 
     def transform_image(self, image_path, mask_path):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
