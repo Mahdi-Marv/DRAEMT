@@ -8,6 +8,7 @@ from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 import os
 import random
 import matplotlib.pyplot as plt
+import gc
 
 
 def show_images(images, labels, dataset_name):
@@ -186,6 +187,10 @@ if __name__ == "__main__":
     with torch.cuda.device(args.gpu_id):
         print("##### test 1 #####")
         test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name, test_id=1)
+        torch.cuda.empty_cache()
+
+        gc.collect()
+
         print("###### test 2 ######")
         test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name, test_id=2)
 
