@@ -19,20 +19,24 @@ class MVTecDRAEMTestDataset(Dataset):
         self.resize_shape = resize_shape
         self.test_id = test_id
 
-        test_normal_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/NORMAL/*')
-        test_anomaly_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/ABNORMAL/*')
+        test_normal_path = glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/test/NORMAL/*')
+        test_anomaly_path = glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/test/ABNORMAL/*')
 
         self.test_path = test_normal_path + test_anomaly_path
         self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
 
         if self.test_id == 2:
-            df = pd.read_csv('/kaggle/input/pad-ufes-20/PAD-UFES-20/metadata.csv')
+            df = pd.read_csv('/kaggle/input/ddrdataset/DR_grading.csv')
+            label = df["diagnosis"].to_numpy()
+            path = df["id_code"].to_numpy()
 
-            shifted_test_label = df["diagnostic"].to_numpy()
-            shifted_test_label = (shifted_test_label != "NEV")
+            normal_path = path[label == 0]
+            anomaly_path = path[label != 0]
 
-            shifted_test_path = df["img_id"].to_numpy()
-            shifted_test_path = '/kaggle/input/pad-ufes-20/PAD-UFES-20/Dataset/' + shifted_test_path
+            shifted_test_path = list(normal_path) + list(anomaly_path)
+            shifted_test_label = [0] * len(normal_path) + [1] * len(anomaly_path)
+
+            shifted_test_path = ["/kaggle/input/ddrdataset/DR_grading/DR_grading/" + s for s in shifted_test_path]
 
             self.test_path = shifted_test_path
             self.test_label = shifted_test_label
@@ -86,9 +90,10 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.root_dir = root_dir
         self.resize_shape = resize_shape
 
-        self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
+        # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        # self.image_paths = glob.glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
+        self.image_paths = glob.glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/train/NORMAL/*')
+
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
