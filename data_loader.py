@@ -65,7 +65,7 @@ class MVTecDRAEMTestDataset(Dataset):
             idx = idx.tolist()
 
         img_path = self.test_path[idx]
-        image = self.transform_image(img_path, None)
+        image, _ = self.transform_image(img_path, None)
 
         has_anomaly = np.array([0], dtype=np.float32) if self.test_label[idx] == 0 else np.array([1], dtype=np.float32)
 
