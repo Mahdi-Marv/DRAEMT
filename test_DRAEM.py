@@ -43,11 +43,11 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
     obj_ap_image_list = []
     obj_auroc_image_list = []
 
-
+    obj_names = ['tooth']
 
     for obj_name in obj_names:
         img_dim = 256
-        run_name = base_model_name+"_"+obj_name+'_'
+        run_name = 'DRAEM_test'
 
         model = ReconstructiveSubNetwork(in_channels=3, out_channels=3)
         model.load_state_dict(torch.load(os.path.join(checkpoint_path,run_name+".pckl"), map_location='cuda:0'))
@@ -59,7 +59,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
         model_seg.cuda()
         model_seg.eval()
 
-        dataset = MVTecDRAEMTestDataset(mvtec_path + obj_name + "/test/", resize_shape=[img_dim, img_dim])
+        dataset = MVTecDRAEMTestDataset('/kaggle/input/mvtec-ad/toothbrush/test/', resize_shape=[img_dim, img_dim])
         dataloader = DataLoader(dataset, batch_size=1,
                                 shuffle=False, num_workers=0)
 
@@ -133,18 +133,10 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
         obj_ap_image_list.append(ap)
         print(obj_name)
         print("AUC Image:  " +str(auroc))
-        print("AP Image:  " +str(ap))
-        print("AUC Pixel:  " +str(auroc_pixel))
-        print("AP Pixel:  " +str(ap_pixel))
-        print("==============================")
 
-    print(run_name)
-    print("AUC Image mean:  " + str(np.mean(obj_auroc_image_list)))
-    print("AP Image mean:  " + str(np.mean(obj_ap_image_list)))
-    print("AUC Pixel mean:  " + str(np.mean(obj_auroc_pixel_list)))
-    print("AP Pixel mean:  " + str(np.mean(obj_ap_pixel_list)))
 
-    write_results_to_file(run_name, obj_auroc_image_list, obj_auroc_pixel_list, obj_ap_image_list, obj_ap_pixel_list)
+
+
 
 if __name__=="__main__":
     import argparse
