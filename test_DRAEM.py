@@ -33,6 +33,7 @@ def show_images(images, labels, dataset_name):
             ax.set_title(f"Label: {labels[i].item()}")
         ax.axis("off")
 
+    print('end visualize')
     plt.tight_layout()
     plt.savefig(f'{dataset_name}_visualization.png')
 
@@ -52,11 +53,12 @@ def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
     images = [sample['image'] for sample in random_samples]
     has_anomalies = [sample['has_anomaly'] for sample in random_samples]
 
-    # Convert 'has_anomalies' list to a tensor
-    labels = torch.tensor(has_anomalies)
+    # Convert 'has_anomalies' list to a numpy array before converting to a tensor
+    labels = torch.tensor(np.array(has_anomalies))
 
     # Show the 20 random samples
     show_images(images, labels, dataset_name)
+
 
 def test(obj_names, mvtec_path, checkpoint_path, base_model_name, test_id):
     obj_ap_pixel_list = []
