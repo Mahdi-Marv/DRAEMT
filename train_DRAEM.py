@@ -70,11 +70,7 @@ def train_on_device(obj_names, args):
     e_num = 0
     l = 0
 
-    dataset_test = data_loader.MVTecDRAEMTestDataset("/kaggle/input/mvtec-ad/toothbrush/test/",
-                                                resize_shape=[256, 256])
-
-    dataloader_test = DataLoader(dataset, batch_size=1,
-                            shuffle=True, num_workers=0)
+    
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
         torch.cuda.empty_cache()
         gc.collect()
