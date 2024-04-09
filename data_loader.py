@@ -8,13 +8,37 @@ import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
 import matplotlib.pyplot as plt
 import random
+import pandas as pd
+
 
 class MVTecDRAEMTestDataset(Dataset):
 
-    def __init__(self, root_dir, resize_shape=None):
+    def __init__(self, root_dir, resize_shape=None, test_id=1):
         self.root_dir = root_dir
-        self.images = sorted(glob.glob(root_dir+"/*/*.png"))
-        self.resize_shape=resize_shape
+        self.images = sorted(glob.glob(root_dir + "/*/*.png"))
+        self.resize_shape = resize_shape
+        self.test_id = test_id
+
+        test_normal_path = glob.glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/test/NORMAL/*')
+        test_anomaly_path = glob.glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/test/ABNORMAL/*')
+
+        self.test_path = test_normal_path + test_anomaly_path
+        self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
+
+        if self.test_id == 2:
+            df = pd.read_csv('/kaggle/input/ddrdataset/DR_grading.csv')
+            label = df["diagnosis"].to_numpy()
+            path = df["id_code"].to_numpy()
+
+            normal_path = path[label == 0]
+            anomaly_path = path[label != 0]
+
+            shifted_test_path = list(normal_path) + list(anomaly_path)
+            shifted_test_label = [0] * len(normal_path) + [1] * len(anomaly_path)
+
+            shifted_test_path = ["/kaggle/input/ddrdataset/DR_grading/DR_grading/" + s for s in shifted_test_path]
+            self.test_path = shifted_test_path
+            self.test_label = shifted_test_label
 
     def __len__(self):
         return len(self.images)
@@ -24,7 +48,7 @@ class MVTecDRAEMTestDataset(Dataset):
         if mask_path is not None:
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         else:
-            mask = np.zeros((image.shape[0],image.shape[1]))
+            mask = np.zeros((image.shape[0], image.shape[1]))
         if self.resize_shape != None:
             image = cv2.resize(image, dsize=(self.resize_shape[1], self.resize_shape[0]))
             mask = cv2.resize(mask, dsize=(self.resize_shape[1], self.resize_shape[0]))
@@ -43,24 +67,14 @@ class MVTecDRAEMTestDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_path = self.images[idx]
-        dir_path, file_name = os.path.split(img_path)
-        base_dir = os.path.basename(dir_path)
-        if base_dir == 'good':
-            image, mask = self.transform_image(img_path, None)
-            has_anomaly = np.array([0], dtype=np.float32)
-        else:
-            mask_path = os.path.join(dir_path, '../../ground_truth/')
-            mask_path = os.path.join(mask_path, base_dir)
-            mask_file_name = file_name.split(".")[0]+"_mask.png"
-            mask_path = os.path.join(mask_path, mask_file_name)
-            image, mask = self.transform_image(img_path, mask_path)
-            has_anomaly = np.array([1], dtype=np.float32)
+        img_path = self.test_path[idx]
+        image = self.transform_image(img_path, None)
 
-        sample = {'image': image, 'has_anomaly': has_anomaly,'mask': mask, 'idx': idx}
+        has_anomaly = np.array([0], dtype=np.float32) if self.test_label[idx] == 0 else np.array([1], dtype=np.float32)
+
+        sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': 'd', 'idx': idx}
 
         return sample
-
 
 
 class MVTecDRAEMTrainDataset(Dataset):
@@ -73,33 +87,30 @@ class MVTecDRAEMTrainDataset(Dataset):
                 on a sample.
         """
         self.root_dir = root_dir
-        self.resize_shape=resize_shape
+        self.resize_shape = resize_shape
 
-        print(root_dir)
         self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
         # self.image_paths = glob.glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
 
-        self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path+"/*/*.jpg"))
+        self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
-        self.augmenters = [iaa.GammaContrast((0.5,2.0),per_channel=True),
-                      iaa.MultiplyAndAddToBrightness(mul=(0.8,1.2),add=(-30,30)),
-                      iaa.pillike.EnhanceSharpness(),
-                      iaa.AddToHueAndSaturation((-50,50),per_channel=True),
-                      iaa.Solarize(0.5, threshold=(32,128)),
-                      iaa.Posterize(),
-                      iaa.Invert(),
-                      iaa.pillike.Autocontrast(),
-                      iaa.pillike.Equalize(),
-                      iaa.Affine(rotate=(-45, 45))
-                      ]
+        self.augmenters = [iaa.GammaContrast((0.5, 2.0), per_channel=True),
+                           iaa.MultiplyAndAddToBrightness(mul=(0.8, 1.2), add=(-30, 30)),
+                           iaa.pillike.EnhanceSharpness(),
+                           iaa.AddToHueAndSaturation((-50, 50), per_channel=True),
+                           iaa.Solarize(0.5, threshold=(32, 128)),
+                           iaa.Posterize(),
+                           iaa.Invert(),
+                           iaa.pillike.Autocontrast(),
+                           iaa.pillike.Equalize(),
+                           iaa.Affine(rotate=(-45, 45))
+                           ]
 
         self.rot = iaa.Sequential([iaa.Affine(rotate=(-90, 90))])
 
-
     def __len__(self):
         return len(self.image_paths)
-
 
     def randAugmenter(self):
         aug_ind = np.random.choice(np.arange(len(self.augmenters)), 3, replace=False)
@@ -136,15 +147,15 @@ class MVTecDRAEMTrainDataset(Dataset):
         no_anomaly = torch.rand(1).numpy()[0]
         if no_anomaly > 0.5:
             image = image.astype(np.float32)
-            return image, np.zeros_like(perlin_thr, dtype=np.float32), np.array([0.0],dtype=np.float32)
+            return image, np.zeros_like(perlin_thr, dtype=np.float32), np.array([0.0], dtype=np.float32)
         else:
             augmented_image = augmented_image.astype(np.float32)
             msk = (perlin_thr).astype(np.float32)
-            augmented_image = msk * augmented_image + (1-msk)*image
+            augmented_image = msk * augmented_image + (1 - msk) * image
             has_anomaly = 1.0
             if np.sum(msk) == 0:
-                has_anomaly=0.0
-            return augmented_image, msk, np.array([has_anomaly],dtype=np.float32)
+                has_anomaly = 0.0
+            return augmented_image, msk, np.array([has_anomaly], dtype=np.float32)
 
     def transform_image(self, image_path, anomaly_source_path):
         image = cv2.imread(image_path)
@@ -165,96 +176,16 @@ class MVTecDRAEMTrainDataset(Dataset):
         idx = torch.randint(0, len(self.image_paths), (1,)).item()
         anomaly_source_idx = torch.randint(0, len(self.anomaly_source_paths), (1,)).item()
         image, augmented_image, anomaly_mask, has_anomaly = self.transform_image(self.image_paths[idx],
-                                                                           self.anomaly_source_paths[anomaly_source_idx])
+                                                                                 self.anomaly_source_paths[
+                                                                                     anomaly_source_idx])
         sample = {'image': image, "anomaly_mask": anomaly_mask,
                   'augmented_image': augmented_image, 'has_anomaly': has_anomaly, 'idx': idx}
 
         return sample
 
 
-def get_isic_loader():
-
-
-    train_path = glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
-    train_label = [0] * len(train_path)
-    test_anomaly_path = glob('/kaggle/input/isic-task3-dataset/dataset/test/ABNORMAL/*')
-    test_anomaly_label = [1] * len(test_anomaly_path)
-    test_normal_path = glob('/kaggle/input/isic-task3-dataset/dataset/test/NORMAL/*')
-    test_normal_label = [0] * len(test_normal_path)
-
-
-
-    test_label = test_anomaly_label + test_normal_label
-    test_path = test_anomaly_path + test_normal_path
-
-    train_set = ISIC2018(image_path=train_path, labels=train_label, transform=transform)
-    trainset_1 = ISIC2018(image_path=train_path, labels=train_label, transform=Transform())
-    test_set = ISIC2018(image_path=test_path, labels=test_label, transform=transform)
-
-    visualize_random_samples_from_clean_dataset(train_set, "trainset")
-    visualize_random_samples_from_clean_dataset(test_set, "testset")
 
 
 
 
-class ISIC2018(Dataset):
-    def __init__(self, image_path, labels, transform=None, count=-1, anomaly_source_path=''):
-        self.transform = transform
-        self.image_files = image_path
-        self.labels = labels
-        self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
-        if count != -1:
-            if count < len(self.image_files):
-                self.image_files = self.image_files[:count]
-                self.labels = self.labels[:count]
-            else:
-                t = len(self.image_files)
-                for i in range(count - t):
-                    self.image_files.append(random.choice(self.image_files[:t]))
-                    self.labels.append(random.choice(self.labels[:t]))
 
-    def __getitem__(self, index):
-        image_file = self.image_files[index]
-        image = Image.open(image_file)
-        image = image.convert('RGB')
-        if self.transform is not None:
-            image = self.transform(image)
-        return image, self.labels[index]
-
-    def __len__(self):
-        return len(self.image_files)
-
-
-def show_images(images, labels, dataset_name):
-    num_images = len(images)
-    rows = int(num_images / 5) + 1
-
-    fig, axes = plt.subplots(rows, 5, figsize=(15, rows * 3))
-
-    for i, ax in enumerate(axes.flatten()):
-        if i < num_images:
-            ax.imshow(images[i].permute(1, 2, 0))  # permute to (H, W, C) for displaying RGB images
-            ax.set_title(f"Label: {labels[i]}")
-        ax.axis("off")
-
-    plt.savefig(f'{dataset_name}_visualization.png')
-
-
-def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
-    print(f"Start visualization of clean dataset: {dataset_name}")
-    # Choose 20 random indices from the dataset
-    if len(dataset) > 20:
-        random_indices = random.sample(range(len(dataset)), 20)
-    else:
-        random_indices = [i for i in range(len(dataset))]
-
-    # Retrieve corresponding samples
-    random_samples = [dataset[i] for i in random_indices]
-
-    # Separate images and labels
-    images, labels = zip(*random_samples)
-
-    labels = torch.tensor(labels)
-
-    # Show the 20 random samples
-    show_images(images, labels, dataset_name)

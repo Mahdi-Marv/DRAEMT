@@ -6,39 +6,47 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 import os
+import random
+import matplotlib.pyplot as plt
 
 
-def write_results_to_file(run_name, image_auc, pixel_auc, image_ap, pixel_ap):
-    if not os.path.exists('./outputs/'):
-        os.makedirs('./outputs/')
+def show_images(images, labels, dataset_name):
+    num_images = len(images)
+    rows = int(num_images / 5) + 1
 
-    fin_str = "img_auc," + run_name
-    for i in image_auc:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += "," + str(np.round(np.mean(image_auc), 3))
-    fin_str += "\n"
-    fin_str += "pixel_auc," + run_name
-    for i in pixel_auc:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += "," + str(np.round(np.mean(pixel_auc), 3))
-    fin_str += "\n"
-    fin_str += "img_ap," + run_name
-    for i in image_ap:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += "," + str(np.round(np.mean(image_ap), 3))
-    fin_str += "\n"
-    fin_str += "pixel_ap," + run_name
-    for i in pixel_ap:
-        fin_str += "," + str(np.round(i, 3))
-    fin_str += "," + str(np.round(np.mean(pixel_ap), 3))
-    fin_str += "\n"
-    fin_str += "--------------------------\n"
+    fig, axes = plt.subplots(rows, 5, figsize=(15, rows * 3))
 
-    with open("./outputs/results.txt", 'a+') as file:
-        file.write(fin_str)
+    for i, ax in enumerate(axes.flatten()):
+        if i < num_images:
+            ax.imshow(images[i].permute(1, 2, 0))  # permute to (H, W, C) for displaying RGB images
+            ax.set_title(f"Label: {labels[i]}")
+        ax.axis("off")
+
+    plt.savefig(f'{dataset_name}_visualization.png')
 
 
-def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
+def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
+    print(f"Start visualization of clean dataset: {dataset_name}")
+    # Choose 20 random indices from the dataset
+    if len(dataset) > 20:
+        random_indices = random.sample(range(len(dataset)), 20)
+    else:
+        random_indices = list(range(len(dataset)))
+
+    # Retrieve corresponding samples
+    random_samples = [dataset[i] for i in random_indices]
+
+    # Extract images and 'has_anomaly' flags
+    images = [sample['image'] for sample in random_samples]
+    has_anomalies = [sample['has_anomaly'] for sample in random_samples]
+
+    # Convert 'has_anomalies' list to a tensor
+    labels = torch.tensor(has_anomalies)
+
+    # Show the 20 random samples
+    show_images(images, labels, dataset_name)
+
+def test(obj_names, mvtec_path, checkpoint_path, base_model_name, test_id):
     obj_ap_pixel_list = []
     obj_auroc_pixel_list = []
     obj_ap_image_list = []
@@ -46,7 +54,7 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
 
     obj_names = ['tooth']
 
-    for obj_name in obj_names:
+    for _ in obj_names:
         img_dim = 256
         run_name = 'DRAEM_test'
 
@@ -61,9 +69,12 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
         model_seg.cuda()
         model_seg.eval()
 
-        dataset = MVTecDRAEMTestDataset('/kaggle/input/mvtec-ad/toothbrush/test', resize_shape=[img_dim, img_dim])
+        dataset = MVTecDRAEMTestDataset('/kaggle/input/mvtec-ad/toothbrush/test', resize_shape=[img_dim, img_dim],
+                                        test_id=test_id)
         dataloader = DataLoader(dataset, batch_size=1,
-                                shuffle=False, num_workers=0)
+                                shuffle=True, num_workers=0)
+
+        visualize_random_samples_from_clean_dataset(dataset, f"dataset{test_id}")
 
         total_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
         total_gt_pixel_scores = np.zeros((img_dim * img_dim * len(dataset)))
@@ -130,7 +141,6 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name):
         # obj_auroc_pixel_list.append(auroc_pixel)
         obj_auroc_image_list.append(auroc)
         obj_ap_image_list.append(ap)
-        print(obj_name)
         print("AUC Image:  " + str(auroc))
 
 
@@ -163,4 +173,9 @@ if __name__ == "__main__":
                 ]
 
     with torch.cuda.device(args.gpu_id):
-        test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name)
+        print("##### test 1 #####")
+        test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name, test_id=1)
+        print("###### test 2 ######")
+        test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name, test_id=2)
+
+

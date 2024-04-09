@@ -9,9 +9,46 @@ from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 from loss import FocalLoss, SSIM
 import os
 from tqdm import tqdm
+import random
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 
+def show_images(images, labels, dataset_name):
+    num_images = len(images)
+    rows = int(num_images / 5) + 1
+
+    fig, axes = plt.subplots(rows, 5, figsize=(15, rows * 3))
+
+    for i, ax in enumerate(axes.flatten()):
+        if i < num_images:
+            ax.imshow(images[i].permute(1, 2, 0))  # permute to (H, W, C) for displaying RGB images
+            ax.set_title(f"Label: {labels[i]}")
+        ax.axis("off")
+
+    plt.savefig(f'{dataset_name}_visualization.png')
+
+
+def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
+    print(f"Start visualization of clean dataset: {dataset_name}")
+    # Choose 20 random indices from the dataset
+    if len(dataset) > 20:
+        random_indices = random.sample(range(len(dataset)), 20)
+    else:
+        random_indices = list(range(len(dataset)))
+
+    # Retrieve corresponding samples
+    random_samples = [dataset[i] for i in random_indices]
+
+    # Extract images and 'has_anomaly' flags
+    images = [sample['image'] for sample in random_samples]
+    has_anomalies = [sample['has_anomaly'] for sample in random_samples]
+
+    # Convert 'has_anomalies' list to a tensor
+    labels = torch.tensor(has_anomalies)
+
+    # Show the 20 random samples
+    show_images(images, labels, dataset_name)
 
 
 
@@ -63,6 +100,8 @@ def train_on_device(obj_names, args):
 
     dataloader = DataLoader(dataset, batch_size=args.bs,
                             shuffle=True, num_workers=16)
+
+    visualize_random_samples_from_clean_dataset(dataset, "train set")
 
     # dataloader = data_loader.get_isic_loader()
 
