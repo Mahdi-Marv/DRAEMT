@@ -70,7 +70,7 @@ def train_on_device(obj_names, args):
     e_num = 0
     l = 0
 
-    
+
     for epoch in tqdm(range(args.epochs), desc='Epochs Progress'):
         torch.cuda.empty_cache()
         gc.collect()
