@@ -19,8 +19,8 @@ class MVTecDRAEMTestDataset(Dataset):
         self.resize_shape = resize_shape
         self.test_id = test_id
 
-        test_normal_path = glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/test/NORMAL/*')
-        test_anomaly_path = glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/test/ABNORMAL/*')
+        test_normal_path = glob('/kaggle/working/APTOS/test/NORMAL/*')
+        test_anomaly_path = glob('/kaggle/working/APTOS/test/ABNORMAL/*')
 
         self.test_path = test_normal_path + test_anomaly_path
         self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
@@ -92,7 +92,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        self.image_paths = glob.glob('/kaggle/working/Mean-Shifted-Anomaly-Detection/APTOS/train/NORMAL/*')
+        self.image_paths = glob.glob('/kaggle/working/APTOS/train/NORMAL/*')
 
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
