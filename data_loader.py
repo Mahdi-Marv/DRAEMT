@@ -84,7 +84,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        self.image_paths = glob.glob('./Br35H/dataset/train/')
+        self.image_paths = glob.glob('./Br35H/dataset/train/normal/')
 
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
