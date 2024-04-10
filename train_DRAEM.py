@@ -60,6 +60,7 @@ def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
 
     # Show the 20 random samples
     show_images(images, labels, dataset_name)
+    print("visualization done")
 
 
 

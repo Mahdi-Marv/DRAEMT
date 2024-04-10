@@ -58,6 +58,7 @@ def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
 
     # Show the 20 random samples
     show_images(images, labels, dataset_name)
+    print('visualization done')
 
 
 def test(obj_names, mvtec_path, checkpoint_path, base_model_name, test_id):
@@ -189,9 +190,7 @@ if __name__ == "__main__":
     with torch.cuda.device(args.gpu_id):
         print("##### test 1 #####")
         test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name, test_id=1)
-        torch.cuda.empty_cache()
 
-        gc.collect()
 
         print("###### test 2 ######")
         test(obj_list, args.data_path, args.checkpoint_path, args.base_model_name, test_id=2)

@@ -19,27 +19,19 @@ class MVTecDRAEMTestDataset(Dataset):
         self.resize_shape = resize_shape
         self.test_id = test_id
 
-        test_normal_path = glob.glob('/kaggle/working/APTOS/test/NORMAL/*')
-        test_anomaly_path = glob.glob('/kaggle/working/APTOS/test/ABNORMAL/*')
+        test_normal_path = glob.glob('./Br35H/dataset/test/normal/*')
+        test_anomaly_path = glob.glob('./Br35H/dataset/test/anomaly/*')
 
         self.test_path = test_normal_path + test_anomaly_path
         self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
 
         if self.test_id == 2:
-            df = pd.read_csv('/kaggle/input/ddrdataset/DR_grading.csv')
-            label = df["diagnosis"].to_numpy()
-            path = df["id_code"].to_numpy()
+            test_normal_path = glob.glob('./brats/dataset/test/normal/*')
+            test_anomaly_path = glob.glob('./brats/dataset/test/anomaly/*')
 
-            normal_path = path[label == 0]
-            anomaly_path = path[label != 0]
+            self.test_path = test_normal_path + test_anomaly_path
+            self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
 
-            shifted_test_path = list(normal_path) + list(anomaly_path)
-            shifted_test_label = [0] * len(normal_path) + [1] * len(anomaly_path)
-
-            shifted_test_path = ["/kaggle/input/ddrdataset/DR_grading/DR_grading/" + s for s in shifted_test_path]
-
-            self.test_path = shifted_test_path
-            self.test_label = shifted_test_label
 
     def __len__(self):
         return len(self.test_path)
@@ -92,7 +84,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        self.image_paths = glob.glob('/kaggle/working/APTOS/train/NORMAL/*')
+        self.image_paths = glob.glob('./Br35H/dataset/train/')
 
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
