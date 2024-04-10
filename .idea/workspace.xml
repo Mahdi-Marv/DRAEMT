@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2db90f43-b3bd-418b-9c49-7b55f116b625" name="Changes" comment="add wbc files">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="619e4f11-dbf7-4da2-a1dd-f50add5fcc79" name="Changes" comment="fix bugs" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -19,11 +17,6 @@
       </map>
     </option>
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "git-widget-placeholder": "wbc2"
-  }
-}]]></component>
   <component name="TaskManager">
     <task id="LOCAL-00001" summary="add wbc files">
       <option name="closed" value="true" />
