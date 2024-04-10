@@ -6,6 +6,9 @@ from tensorboard_visualizer import TensorboardVisualizer
 from model_unet import ReconstructiveSubNetwork, DiscriminativeSubNetwork
 from loss import FocalLoss, SSIM
 import os
+import matplotlib.pyplot as plt
+import numpy as np
+import random
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
@@ -18,6 +21,54 @@ def weights_init(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+
+def show_images(images, labels, dataset_name):
+    num_images = len(images)
+    rows = int(np.ceil(num_images / 5))  # Use np.ceil to ensure enough rows
+
+    fig, axes = plt.subplots(rows, 5, figsize=(15, rows * 3), squeeze=False)  # Ensure axes is always a 2D array
+
+    for i, ax in enumerate(axes.flatten()):
+        if i < num_images:
+            # Check if image is a tensor, if so, convert to numpy
+            if isinstance(images[i], torch.Tensor):
+                image = images[i].numpy()
+            else:
+                image = images[i]
+            # If image is in (C, H, W) format, transpose it to (H, W, C)
+            if image.shape[0] in {1, 3}:  # Assuming grayscale (1 channel) or RGB (3 channels)
+                image = image.transpose(1, 2, 0)
+            if image.shape[2] == 1:  # If grayscale, convert to RGB for consistency
+                image = np.repeat(image, 3, axis=2)
+            ax.imshow(image)
+            ax.set_title(f"Label: {labels[i].item()}")
+        ax.axis("off")
+
+    plt.tight_layout()
+    plt.savefig(f'{dataset_name}_visualization.png')
+
+
+def visualize_random_samples_from_clean_dataset(dataset, dataset_name):
+    print(f"Start visualization of clean dataset: {dataset_name}")
+    # Choose 20 random indices from the dataset
+    if len(dataset) > 20:
+        random_indices = random.sample(range(len(dataset)), 20)
+    else:
+        random_indices = list(range(len(dataset)))
+
+    # Retrieve corresponding samples
+    random_samples = [dataset[i] for i in random_indices]
+
+    # Extract images and 'has_anomaly' flags
+    images = [sample['image'] for sample in random_samples]
+    has_anomalies = [sample['has_anomaly'] for sample in random_samples]
+
+    # Convert 'has_anomalies' list to a tensor
+    labels = torch.tensor(has_anomalies)
+
+    # Show the 20 random samples
+    show_images(images, labels, dataset_name)
+    print('visualization done')
 
 def train_on_device(obj_names, args):
 
@@ -55,6 +106,8 @@ def train_on_device(obj_names, args):
 
         dataloader = DataLoader(dataset, batch_size=args.bs,
                                 shuffle=True, num_workers=16)
+
+        visualize_random_samples_from_clean_dataset(dataset, f"train{obj_name}")
 
         n_iter = 0
         for epoch in range(args.epochs):
