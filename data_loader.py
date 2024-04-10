@@ -6,6 +6,7 @@ import cv2
 import glob
 import imgaug.augmenters as iaa
 from perlin import rand_perlin_2d_np
+import pandas as pd
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -63,7 +64,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
 class MVTecDRAEMTrainDataset(Dataset):
 
-    def __init__(self, root_dir, anomaly_source_path, resize_shape=None):
+    def __init__(self, root_dir, anomaly_source_path, resize_shape=None, train=1):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -76,6 +77,11 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path+"/*/*.jpg"))
+
+        self.csv_path = f'dataset{train}_train.csv'
+        self.img_folder = f'wbc/segmentation_WBC-master/Dataset {train}'
+        self.img_labels = pd.read_csv(self.csv_path)
+
 
         self.augmenters = [iaa.GammaContrast((0.5,2.0),per_channel=True),
                       iaa.MultiplyAndAddToBrightness(mul=(0.8,1.2),add=(-30,30)),
@@ -93,7 +99,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
 
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.img_labels)
 
 
     def randAugmenter(self):
@@ -157,9 +163,12 @@ class MVTecDRAEMTrainDataset(Dataset):
         return image, augmented_image, anomaly_mask, has_anomaly
 
     def __getitem__(self, idx):
-        idx = torch.randint(0, len(self.image_paths), (1,)).item()
+        idx = torch.randint(0, len(self.img_labels), (1,)).item()
         anomaly_source_idx = torch.randint(0, len(self.anomaly_source_paths), (1,)).item()
-        image, augmented_image, anomaly_mask, has_anomaly = self.transform_image(self.image_paths[idx],
+
+        img_path = f"{self.img_folder}/{str(self.img_labels.iloc[idx, 0]).zfill(3)}.bmp"
+
+        image, augmented_image, anomaly_mask, has_anomaly = self.transform_image(img_path,
                                                                            self.anomaly_source_paths[anomaly_source_idx])
         sample = {'image': image, "anomaly_mask": anomaly_mask,
                   'augmented_image': augmented_image, 'has_anomaly': has_anomaly, 'idx': idx}
