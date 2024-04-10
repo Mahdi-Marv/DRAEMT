@@ -11,13 +11,20 @@ import pandas as pd
 
 class MVTecDRAEMTestDataset(Dataset):
 
-    def __init__(self, root_dir, resize_shape=None):
+    def __init__(self, root_dir, resize_shape=None, test=1):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
         self.resize_shape = resize_shape
 
+        self.csv_path = f'dataset{test}_test.csv'
+        self.img_folder = f'wbc/segmentation_WBC-master/Dataset {test}'
+        self.img_labels = pd.read_csv(self.csv_path)
+
+
+
+
     def __len__(self):
-        return len(self.images)
+        return len(self.img_labels)
 
     def transform_image(self, image_path, mask_path):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -43,21 +50,18 @@ class MVTecDRAEMTestDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_path = self.images[idx]
-        dir_path, file_name = os.path.split(img_path)
-        base_dir = os.path.basename(dir_path)
-        if base_dir == 'good':
-            image, mask = self.transform_image(img_path, None)
-            has_anomaly = np.array([0], dtype=np.float32)
-        else:
-            mask_path = os.path.join(dir_path, '../../ground_truth/')
-            mask_path = os.path.join(mask_path, base_dir)
-            mask_file_name = file_name.split(".")[0] + "_mask.png"
-            mask_path = os.path.join(mask_path, mask_file_name)
-            image, mask = self.transform_image(img_path, mask_path)
-            has_anomaly = np.array([1], dtype=np.float32)
 
-        sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': mask, 'idx': idx}
+        label = self.img_labels.iloc[idx, 1]
+        clas = 0 if label == 1 else 1
+
+        img_path = f"{self.img_folder}/{str(self.img_labels.iloc[idx, 0]).zfill(3)}.bmp"
+
+
+        has_anomaly = np.array([0], dtype=np.float32) if clas == 0 else np.array([1], dtype=np.float32)
+
+        image, _ = self.transform_image(img_path, None)
+
+        sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': '', 'idx': idx}
 
         return sample
 
