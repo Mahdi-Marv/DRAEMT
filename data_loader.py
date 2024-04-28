@@ -85,7 +85,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
         self.image_paths = glob.glob('/kaggle/working/DRAEMT/Br35H/dataset/train/normal/*')
-        brats_mod = glob('./brats/dataset/train/normal/*')
+        brats_mod = glob.glob('./brats/dataset/train/normal/*')
 
         random.seed(1)
 
