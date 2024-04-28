@@ -85,6 +85,16 @@ class MVTecDRAEMTrainDataset(Dataset):
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
         self.image_paths = glob.glob('/kaggle/working/DRAEMT/Br35H/dataset/train/normal/*')
+        brats_mod = glob('./brats/dataset/train/normal/*')
+
+        random.seed(1)
+
+        random_brats_images = random.sample(brats_mod, 150)
+        self.image_paths.extend(random_brats_images)
+
+        print('added 150 normal brat images')
+
+
 
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
