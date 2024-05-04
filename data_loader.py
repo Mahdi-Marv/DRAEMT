@@ -19,23 +19,39 @@ class MVTecDRAEMTestDataset(Dataset):
         self.resize_shape = resize_shape
         self.test_id = test_id
 
-        test_normal_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/NORMAL/*')
-        test_anomaly_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/ABNORMAL/*')
+        if test_id == 1:
+            node0_test_normal = glob('/kaggle/input/camelyon17-clean/node0/test/normal/*')
+            node0_test_anomaly = glob('/kaggle/input/camelyon17-clean/node0/test/anomaly/*')
 
-        self.test_path = test_normal_path + test_anomaly_path
-        self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
+            node1_test_normal = glob('/kaggle/input/camelyon17-clean/node1/test/normal/*')
+            node1_test_anomaly = glob('/kaggle/input/camelyon17-clean/node1/test/anomaly/*')
 
-        if self.test_id == 2:
-            df = pd.read_csv('/kaggle/input/pad-ufes-20/PAD-UFES-20/metadata.csv')
+            node2_test_normal = glob('/kaggle/input/camelyon17-clean/node2/test/normal/*')
+            node2_test_anomaly = glob('/kaggle/input/camelyon17-clean/node2/test/anomaly/*')
 
-            shifted_test_label = df["diagnostic"].to_numpy()
-            shifted_test_label = (shifted_test_label != "NEV")
+            test_path_normal = node0_test_normal + node1_test_normal + node2_test_normal
+            test_path_normal = random.sample(test_path_normal, 2000)
 
-            shifted_test_path = df["img_id"].to_numpy()
-            shifted_test_path = '/kaggle/input/pad-ufes-20/PAD-UFES-20/Dataset/' + shifted_test_path
+            test_path_anomaly = node0_test_anomaly + node1_test_anomaly + node2_test_anomaly
+            test_path_anomaly = random.sample(test_path_anomaly, 2000)
 
-            self.test_path = shifted_test_path
-            self.test_label = shifted_test_label
+            self.test_path = test_path_normal + test_path_anomaly
+            self.test_label = [0] * len(test_path_normal) + [1] * len(test_path_anomaly)
+        else:
+            node3_test_normal = glob('/kaggle/input/camelyon17-clean/node3/test/normal/*')
+            node3_test_anomaly = glob('/kaggle/input/camelyon17-clean/node3/test/anomaly/*')
+
+            node4_test_normal = glob('/kaggle/input/camelyon17-clean/node4/test/normal/*')
+            node4_test_anomaly = glob('/kaggle/input/camelyon17-clean/node4/test/anomaly/*')
+
+            shifted_test_path_normal = node3_test_normal + node4_test_normal
+            shifted_test_path_normal = random.sample(shifted_test_path_normal, 2000)
+
+            shifted_test_path_anomaly = node3_test_anomaly + node4_test_anomaly
+            shifted_test_path_anomaly = random.sample(shifted_test_path_anomaly, 2000)
+
+            self.test_path = shifted_test_path_normal + shifted_test_path_anomaly
+            self.test_label = [0] * len(shifted_test_path_normal) + [1] * len(shifted_test_path_anomaly)
 
     def __len__(self):
         return len(self.test_path)
@@ -88,7 +104,12 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        self.image_paths = glob.glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
+        node0_train = glob.glob('/kaggle/input/camelyon17-clean/node0/train/normal/*')
+        node1_train = glob.glob('/kaggle/input/camelyon17-clean/node1/train/normal/*')
+        node2_train = glob.glob('/kaggle/input/camelyon17-clean/node2/train/normal/*')
+
+        self.image_paths = node0_train + node1_train + node2_train
+        self.image_paths = random.sample(self.image_paths, 5000)
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
