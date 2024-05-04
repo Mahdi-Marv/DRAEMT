@@ -9,7 +9,65 @@ from perlin import rand_perlin_2d_np
 import matplotlib.pyplot as plt
 import random
 import pandas as pd
+import pydicom
 
+
+def process_dicom_image(image_path, resize_shape):
+    # Step 1: Read the DICOM file
+    dicom = pydicom.dcmread(image_path)
+
+    # Step 2: Access the pixel data
+    pixel_array = dicom.pixel_array
+
+    # Step 3: Normalize and scale pixel data if it's not in uint8 format
+    if dicom.pixel_array.dtype != np.uint8:
+        # Normalize the pixel values to the range [0, 255]
+        pixel_array = pixel_array.astype(float)
+        pixel_array -= pixel_array.min()  # Normalize to 0
+        pixel_array /= pixel_array.max()  # Normalize to 1
+        pixel_array *= 255.0
+        pixel_array = np.uint8(pixel_array)
+
+    # Step 4: Convert grayscale to BGR (3 channels) if needed
+    if len(pixel_array.shape) == 2:
+        image = cv2.cvtColor(pixel_array, cv2.COLOR_GRAY2BGR)
+    else:
+        image = pixel_array
+
+    # Step 5: Resize the image
+    image = cv2.resize(image, (resize_shape[1], resize_shape[0]))  # Note the order of dimensions
+
+    return image
+
+
+def preprocess_dicom_image(image_path):
+    # Step 1: Read the DICOM file using pydicom
+    dicom = pydicom.dcmread(image_path)
+
+    # Step 2: Extract the pixel data
+    pixel_array = dicom.pixel_array
+
+    # Step 3: Handle different data types and normalize
+    if dicom.pixel_array.dtype != np.uint8:
+        # Normalize the pixel values if not already in uint8 format
+        pixel_array = pixel_array.astype(float)
+        pixel_array = (np.maximum(pixel_array, 0) / pixel_array.max()) * 255.0
+        pixel_array = np.uint8(pixel_array)
+
+    # Step 4: Convert to 3-channel BGR image if it's a grayscale image
+    if len(pixel_array.shape) == 2:
+        image = cv2.cvtColor(pixel_array, cv2.COLOR_GRAY2BGR)
+    else:
+        # Assuming the pixel_array is already in a format that cv2 expects for color images
+        # This might not always be the case, as DICOM can store color images in various formats.
+        # Additional conversion may be necessary depending on the color format.
+        image = pixel_array
+
+    # Optional: Perform additional preprocessing here (e.g., resizing, normalization)
+    # For example, resize the image if needed:
+    # image = cv2.resize(image, (desired_width, desired_height))
+
+    return image
 
 class MVTecDRAEMTestDataset(Dataset):
 
@@ -19,29 +77,27 @@ class MVTecDRAEMTestDataset(Dataset):
         self.resize_shape = resize_shape
         self.test_id = test_id
 
-        test_normal_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/NORMAL/*')
-        test_anomaly_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/ABNORMAL/*')
+        test_normal_path = glob.glob('/kaggle/working/test/normal/*')
+        test_anomaly_path = glob.glob('/kaggle/working/test/anomaly/*')
 
         self.test_path = test_normal_path + test_anomaly_path
         self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
 
         if self.test_id == 2:
-            df = pd.read_csv('/kaggle/input/pad-ufes-20/PAD-UFES-20/metadata.csv')
+            test_normal_path = glob.glob('/kaggle/working/chest_xray/test/NORMAL/*')
+            test_anomaly_path = glob.glob('/kaggle/working/chest_xray/test/PNEUMONIA/*')
 
-            shifted_test_label = df["diagnostic"].to_numpy()
-            shifted_test_label = (shifted_test_label != "NEV")
-
-            shifted_test_path = df["img_id"].to_numpy()
-            shifted_test_path = '/kaggle/input/pad-ufes-20/PAD-UFES-20/Dataset/' + shifted_test_path
-
-            self.test_path = shifted_test_path
-            self.test_label = shifted_test_label
+            self.test_path = test_normal_path + test_anomaly_path
+            self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
 
     def __len__(self):
         return len(self.test_path)
 
-    def transform_image(self, image_path, mask_path):
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    def transform_image(self, image_path, mask_path, test_id=1):
+        if test_id == 1:
+            image = preprocess_dicom_image(image_path)
+        else:
+            image = cv2.imread(image_path, cv2.IMREAD_COLOR)
         if mask_path is not None:
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         else:
@@ -65,7 +121,7 @@ class MVTecDRAEMTestDataset(Dataset):
             idx = idx.tolist()
 
         img_path = self.test_path[idx]
-        image, _ = self.transform_image(img_path, None)
+        image, _ = self.transform_image(img_path, None, self.test_id)
 
         has_anomaly = np.array([0], dtype=np.float32) if self.test_label[idx] == 0 else np.array([1], dtype=np.float32)
 
@@ -88,7 +144,7 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        self.image_paths = glob.glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
+        self.image_paths = glob.glob('/kaggle/working/train/normal/*')
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
@@ -155,8 +211,9 @@ class MVTecDRAEMTrainDataset(Dataset):
             return augmented_image, msk, np.array([has_anomaly], dtype=np.float32)
 
     def transform_image(self, image_path, anomaly_source_path):
-        image = cv2.imread(image_path)
-        image = cv2.resize(image, dsize=(self.resize_shape[1], self.resize_shape[0]))
+        # image = cv2.imread(image_path)
+        # image = cv2.resize(image, dsize=(self.resize_shape[1], self.resize_shape[0]))
+        image = process_dicom_image(image_path, resize_shape=self.resize_shape)
 
         do_aug_orig = torch.rand(1).numpy()[0] > 0.7
         if do_aug_orig:
