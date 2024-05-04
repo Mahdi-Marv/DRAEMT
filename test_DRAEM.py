@@ -83,6 +83,8 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name, test_id):
 
         dataset = MVTecDRAEMTestDataset('/kaggle/input/mvtec-ad/toothbrush/test', resize_shape=[img_dim, img_dim],
                                         test_id=test_id)
+        if test_id==1:
+            dataset = MVTecDRAEMTestDataset('d', resize_shape=[img_dim, img_dim], test_id=test_id, count_train_landbg=3500)
         dataloader = DataLoader(dataset, batch_size=1,
                                 shuffle=True, num_workers=0)
 

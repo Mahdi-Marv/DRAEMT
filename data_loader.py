@@ -10,48 +10,70 @@ import matplotlib.pyplot as plt
 import random
 import pandas as pd
 
+# def get_waterbird_trainset():
+#     train_set = MVTecDRAEMTrainDataset(count_train_landbg=3500, count_train_waterbg=100, mode='bg_all')
+#     return train_set
+# def get_waterbird_test_set():
+#     test_set = MVTecDRAEMTestDataset(count_train_landbg=3500, count_train_waterbg=100, mode='bg_land')
+#     return test_set
+#
+# def get_waterbird_just_test_shifted():
+#     test_set = MVTecDRAEMTestDataset(count_train_landbg=3500, count_train_waterbg=100, mode='bg_water')
+#     return test_set
 
 class MVTecDRAEMTestDataset(Dataset):
 
-    def __init__(self, root_dir, resize_shape=None, test_id=1):
+    def __init__(self, root_dir, resize_shape=None, test_id=1, count_train_landbg=3500, count_train_waterbg=100, mode='bg_all'):
         self.root_dir = root_dir
         self.images = sorted(glob.glob(root_dir + "/*/*.png"))
         self.resize_shape = resize_shape
         self.test_id = test_id
+        copy = False
 
-        if test_id == 1:
-            node0_test_normal = glob('/kaggle/input/camelyon17-clean/node0/test/normal/*')
-            node0_test_anomaly = glob('/kaggle/input/camelyon17-clean/node0/test/anomaly/*')
+        root = '/kaggle/input/waterbird/waterbird'
+        df = pd.read_csv(os.path.join(root, 'metadata.csv'))
 
-            node1_test_normal = glob('/kaggle/input/camelyon17-clean/node1/test/normal/*')
-            node1_test_anomaly = glob('/kaggle/input/camelyon17-clean/node1/test/anomaly/*')
+        print(len(df))
 
-            node2_test_normal = glob('/kaggle/input/camelyon17-clean/node2/test/normal/*')
-            node2_test_anomaly = glob('/kaggle/input/camelyon17-clean/node2/test/anomaly/*')
+        self.train = train
+        self.df = df
+        lb_on_l = df[(df['y'] == 0) & (df['place'] == 0)]
+        lb_on_w = df[(df['y'] == 0) & (df['place'] == 1)]
+        self.normal_paths = []
+        self.labels = []
 
-            test_path_normal = node0_test_normal + node1_test_normal + node2_test_normal
-            test_path_normal = random.sample(test_path_normal, 2000)
+        normal_df = lb_on_l.iloc[:count_train_landbg]
+        normal_df_np = normal_df['img_filename'].to_numpy()
+        self.normal_paths.extend([os.path.join(root, x) for x in normal_df_np][:count_train_landbg])
+        normal_df = lb_on_w.iloc[:count_train_waterbg]
+        normal_df_np = normal_df['img_filename'].to_numpy()
+        copy_count = 1
+        if copy:
+            copy_count = count_train_landbg // count_train_waterbg
+        for _ in range(copy_count):
+            self.normal_paths.extend([os.path.join(root, x) for x in normal_df_np][:count_train_waterbg])
 
-            test_path_anomaly = node0_test_anomaly + node1_test_anomaly + node2_test_anomaly
-            test_path_anomaly = random.sample(test_path_anomaly, 2000)
-
-            self.test_path = test_path_normal + test_path_anomaly
-            self.test_label = [0] * len(test_path_normal) + [1] * len(test_path_anomaly)
+        if train:
+            self.image_paths = self.normal_paths
         else:
-            node3_test_normal = glob('/kaggle/input/camelyon17-clean/node3/test/normal/*')
-            node3_test_anomaly = glob('/kaggle/input/camelyon17-clean/node3/test/anomaly/*')
-
-            node4_test_normal = glob('/kaggle/input/camelyon17-clean/node4/test/normal/*')
-            node4_test_anomaly = glob('/kaggle/input/camelyon17-clean/node4/test/anomaly/*')
-
-            shifted_test_path_normal = node3_test_normal + node4_test_normal
-            shifted_test_path_normal = random.sample(shifted_test_path_normal, 2000)
-
-            shifted_test_path_anomaly = node3_test_anomaly + node4_test_anomaly
-            shifted_test_path_anomaly = random.sample(shifted_test_path_anomaly, 2000)
-
-            self.test_path = shifted_test_path_normal + shifted_test_path_anomaly
-            self.test_label = [0] * len(shifted_test_path_normal) + [1] * len(shifted_test_path_anomaly)
+            self.image_paths = []
+            if mode == 'bg_all':
+                dff = df
+            elif mode == 'bg_water':
+                dff = df[(df['place'] == 1)]
+            elif mode == 'bg_land':
+                dff = df[(df['place'] == 0)]
+            elif mode == 'ood':
+                dff = df[(df['place'] == 0) & (df['y'] == 1)]
+            else:
+                print('Wrong mode!')
+                raise ValueError('Wrong bg mode!')
+            all_paths = dff[['img_filename', 'y']].to_numpy()
+            for i in range(len(all_paths)):
+                full_path = os.path.join(root, all_paths[i][0])
+                if full_path not in self.normal_paths:
+                    self.image_paths.append(full_path)
+                    self.labels.append(all_paths[i][1])
 
     def __len__(self):
         return len(self.test_path)
@@ -83,7 +105,7 @@ class MVTecDRAEMTestDataset(Dataset):
         img_path = self.test_path[idx]
         image, _ = self.transform_image(img_path, None)
 
-        has_anomaly = np.array([0], dtype=np.float32) if self.test_label[idx] == 0 else np.array([1], dtype=np.float32)
+        has_anomaly = np.array([0], dtype=np.float32) if self.labels[idx] == 0 else np.array([1], dtype=np.float32)
 
         sample = {'image': image, 'has_anomaly': has_anomaly, 'mask': 'd', 'idx': idx}
 
@@ -92,7 +114,7 @@ class MVTecDRAEMTestDataset(Dataset):
 
 class MVTecDRAEMTrainDataset(Dataset):
 
-    def __init__(self, root_dir, anomaly_source_path, resize_shape=None):
+    def __init__(self, root_dir, anomaly_source_path, resize_shape=None, count_train_landbg=3500, count_train_waterbg=100, mode='bg_all'):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -101,15 +123,53 @@ class MVTecDRAEMTrainDataset(Dataset):
         """
         self.root_dir = root_dir
         self.resize_shape = resize_shape
+        copy = false
 
-        # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
+        root = '/kaggle/input/waterbird/waterbird'
+        df = pd.read_csv(os.path.join(root, 'metadata.csv'))
 
-        node0_train = glob.glob('/kaggle/input/camelyon17-clean/node0/train/normal/*')
-        node1_train = glob.glob('/kaggle/input/camelyon17-clean/node1/train/normal/*')
-        node2_train = glob.glob('/kaggle/input/camelyon17-clean/node2/train/normal/*')
+        print('full dataset len: ', len(df))
 
-        self.image_paths = node0_train + node1_train + node2_train
-        self.image_paths = random.sample(self.image_paths, 5000)
+        self.train = train
+        self.df = df
+        lb_on_l = df[(df['y'] == 0) & (df['place'] == 0)]
+        lb_on_w = df[(df['y'] == 0) & (df['place'] == 1)]
+        self.normal_paths = []
+        self.labels = []
+
+        normal_df = lb_on_l.iloc[:count_train_landbg]
+        normal_df_np = normal_df['img_filename'].to_numpy()
+        self.normal_paths.extend([os.path.join(root, x) for x in normal_df_np][:count_train_landbg])
+        normal_df = lb_on_w.iloc[:count_train_waterbg]
+        normal_df_np = normal_df['img_filename'].to_numpy()
+        copy_count = 1
+        if copy:
+            copy_count = count_train_landbg // count_train_waterbg
+        for _ in range(copy_count):
+            self.normal_paths.extend([os.path.join(root, x) for x in normal_df_np][:count_train_waterbg])
+
+        if train:
+            self.image_paths = self.normal_paths
+        else:
+            self.image_paths = []
+            if mode == 'bg_all':
+                dff = df
+            elif mode == 'bg_water':
+                dff = df[(df['place'] == 1)]
+            elif mode == 'bg_land':
+                dff = df[(df['place'] == 0)]
+            elif mode == 'ood':
+                dff = df[(df['place'] == 0) & (df['y'] == 1)]
+            else:
+                print('Wrong mode!')
+                raise ValueError('Wrong bg mode!')
+            all_paths = dff[['img_filename', 'y']].to_numpy()
+            for i in range(len(all_paths)):
+                full_path = os.path.join(root, all_paths[i][0])
+                if full_path not in self.normal_paths:
+                    self.image_paths.append(full_path)
+                    self.labels.append(all_paths[i][1])
+
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
