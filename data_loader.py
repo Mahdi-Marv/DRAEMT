@@ -20,14 +20,14 @@ class MVTecDRAEMTestDataset(Dataset):
         self.test_id = test_id
 
         if test_id == 1:
-            node0_test_normal = glob('/kaggle/input/camelyon17-clean/node0/test/normal/*')
-            node0_test_anomaly = glob('/kaggle/input/camelyon17-clean/node0/test/anomaly/*')
+            node0_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node0/test/normal/*')
+            node0_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node0/test/anomaly/*')
 
-            node1_test_normal = glob('/kaggle/input/camelyon17-clean/node1/test/normal/*')
-            node1_test_anomaly = glob('/kaggle/input/camelyon17-clean/node1/test/anomaly/*')
+            node1_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node1/test/normal/*')
+            node1_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node1/test/anomaly/*')
 
-            node2_test_normal = glob('/kaggle/input/camelyon17-clean/node2/test/normal/*')
-            node2_test_anomaly = glob('/kaggle/input/camelyon17-clean/node2/test/anomaly/*')
+            node2_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node2/test/normal/*')
+            node2_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node2/test/anomaly/*')
 
             test_path_normal = node0_test_normal + node1_test_normal + node2_test_normal
             test_path_normal = random.sample(test_path_normal, 2000)
@@ -38,11 +38,11 @@ class MVTecDRAEMTestDataset(Dataset):
             self.test_path = test_path_normal + test_path_anomaly
             self.test_label = [0] * len(test_path_normal) + [1] * len(test_path_anomaly)
         else:
-            node3_test_normal = glob('/kaggle/input/camelyon17-clean/node3/test/normal/*')
-            node3_test_anomaly = glob('/kaggle/input/camelyon17-clean/node3/test/anomaly/*')
+            node3_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node3/test/normal/*')
+            node3_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node3/test/anomaly/*')
 
-            node4_test_normal = glob('/kaggle/input/camelyon17-clean/node4/test/normal/*')
-            node4_test_anomaly = glob('/kaggle/input/camelyon17-clean/node4/test/anomaly/*')
+            node4_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node4/test/normal/*')
+            node4_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node4/test/anomaly/*')
 
             shifted_test_path_normal = node3_test_normal + node4_test_normal
             shifted_test_path_normal = random.sample(shifted_test_path_normal, 2000)
