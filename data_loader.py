@@ -78,9 +78,9 @@ class MVTecDRAEMTestDataset(Dataset):
         self.test_id = test_id
 
         test_normal_path = glob.glob('/kaggle/working/test/normal/*')
-        test_normal_path = random.sample(test_normal_path, 1500)
+        test_normal_path = random.sample(test_normal_path, 150)
         test_anomaly_path = glob.glob('/kaggle/working/test/anomaly/*')
-        test_anomaly_path = random.sample(test_anomaly_path, 1500)
+        test_anomaly_path = random.sample(test_anomaly_path, 150)
 
         self.test_path = test_normal_path + test_anomaly_path
         self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
