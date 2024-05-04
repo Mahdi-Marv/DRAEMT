@@ -92,7 +92,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         random_brats_images = random.sample(brats_mod, 150)
         self.image_paths.extend(random_brats_images)
 
-        print('added 150 normal brat images')
+        print('added 50 normal brat images')
 
 
 
