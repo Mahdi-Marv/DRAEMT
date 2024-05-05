@@ -35,7 +35,6 @@ class MVTecDRAEMTestDataset(Dataset):
 
         print(len(df))
 
-        self.train = train
         self.df = df
         lb_on_l = df[(df['y'] == 0) & (df['place'] == 0)]
         lb_on_w = df[(df['y'] == 0) & (df['place'] == 1)]
@@ -130,7 +129,6 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         print('full dataset len: ', len(df))
 
-        self.train = train
         self.df = df
         lb_on_l = df[(df['y'] == 0) & (df['place'] == 0)]
         lb_on_w = df[(df['y'] == 0) & (df['place'] == 1)]
