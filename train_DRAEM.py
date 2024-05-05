@@ -107,7 +107,7 @@ def train_on_device(obj_names, args):
     loss_ssim = SSIM()
     loss_focal = FocalLoss()
 
-    dataset = MVTecDRAEMTestDataset('d', resize_shape=[img_dim, img_dim], test_id=test_id, count_train_landbg=3500,
+    dataset = MVTecDRAEMTrainDataset('d', anomaly_source_path=args.anomaly_source_path, resize_shape=[img_dim, img_dim], count_train_landbg=3500,
                                     count_train_waterbg=100, mode='bg_all')
 
     dataloader = DataLoader(dataset, batch_size=args.bs,
