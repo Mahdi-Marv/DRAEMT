@@ -9,6 +9,7 @@ from perlin import rand_perlin_2d_np
 import matplotlib.pyplot as plt
 import random
 import pandas as pd
+import pickle
 
 
 class MVTecDRAEMTestDataset(Dataset):
