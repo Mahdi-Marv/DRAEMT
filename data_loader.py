@@ -89,6 +89,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         with open('./content/mnist_shifted_dataset/train_normal.pkl', 'rb') as f:
             normal_train = pickle.load(f)
         self.image_paths = normal_train['images']
+        print(len(self.image_paths))
 
         # self.image_paths = node0_train + node1_train + node2_train
         # self.image_paths = random.sample(self.image_paths, 5000)
