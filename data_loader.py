@@ -39,8 +39,7 @@ class MVTecDRAEMTestDataset(Dataset):
         return len(self.test_path)
 
     def transform_image(self, image_path, mask_path):
-        # image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        image = image_path
+        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
         if mask_path is not None:
             mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         else:
@@ -160,10 +159,8 @@ class MVTecDRAEMTrainDataset(Dataset):
             return augmented_image, msk, np.array([has_anomaly], dtype=np.float32)
 
     def transform_image(self, image_path, anomaly_source_path):
-        # print(image_path)
-        # image = cv2.imread(image_path)
-        # image = image_path
-        image = cv2.resize(image_path, dsize=(self.resize_shape[1], self.resize_shape[0]))
+        image = image_path
+        image = cv2.resize(image, dsize=(self.resize_shape[1], self.resize_shape[0]))
 
         do_aug_orig = torch.rand(1).numpy()[0] > 0.7
         if do_aug_orig:
@@ -177,17 +174,10 @@ class MVTecDRAEMTrainDataset(Dataset):
         return image, augmented_image, anomaly_mask, has_anomaly
 
     def __getitem__(self, idx):
-        transform = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-        ])
 
         idx = torch.randint(0, len(self.image_paths), (1,)).item()
-        image = transform(self.image_paths[idx])
-
         anomaly_source_idx = torch.randint(0, len(self.anomaly_source_paths), (1,)).item()
-        image, augmented_image, anomaly_mask, has_anomaly = self.transform_image(image,
+        image, augmented_image, anomaly_mask, has_anomaly = self.transform_image(self.image_paths[idx],
                                                                                  self.anomaly_source_paths[
                                                                                      anomaly_source_idx])
         sample = {'image': image, "anomaly_mask": anomaly_mask,
