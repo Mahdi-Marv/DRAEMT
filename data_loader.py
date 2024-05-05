@@ -29,6 +29,7 @@ class MVTecDRAEMTestDataset(Dataset):
         self.resize_shape = resize_shape
         self.test_id = test_id
         copy = False
+        train = False
 
         root = '/kaggle/input/waterbird/waterbird'
         df = pd.read_csv(os.path.join(root, 'metadata.csv'))
@@ -123,6 +124,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.root_dir = root_dir
         self.resize_shape = resize_shape
         copy = False
+        train = True
 
         root = '/kaggle/input/waterbird/waterbird'
         df = pd.read_csv(os.path.join(root, 'metadata.csv'))
