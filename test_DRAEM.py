@@ -81,10 +81,12 @@ def test(obj_names, mvtec_path, checkpoint_path, base_model_name, test_id):
         model_seg.cuda()
         model_seg.eval()
 
-        dataset = MVTecDRAEMTestDataset('/kaggle/input/mvtec-ad/toothbrush/test', resize_shape=[img_dim, img_dim],
-                                        test_id=test_id)
         if test_id==1:
-            dataset = MVTecDRAEMTestDataset('d', resize_shape=[img_dim, img_dim], test_id=test_id, count_train_landbg=3500)
+            dataset = MVTecDRAEMTestDataset('d', resize_shape=[img_dim, img_dim], test_id=test_id, count_train_landbg=3500,
+                                            count_train_waterbg=100, mode='bg_land')
+        else:
+            dataset = MVTecDRAEMTestDataset('d', resize_shape=[img_dim, img_dim], test_id=test_id, count_train_landbg=3500,
+                                            count_train_waterbg=100, mode='bg_water')
         dataloader = DataLoader(dataset, batch_size=1,
                                 shuffle=True, num_workers=0)
 
