@@ -107,6 +107,8 @@ def train_on_device(obj_names, args):
     loss_ssim = SSIM()
     loss_focal = FocalLoss()
 
+    img_dim = 256
+
     dataset = MVTecDRAEMTrainDataset('d', anomaly_source_path=args.anomaly_source_path, resize_shape=[img_dim, img_dim], count_train_landbg=3500,
                                     count_train_waterbg=100, mode='bg_all')
 
