@@ -162,7 +162,7 @@ class MVTecDRAEMTrainDataset(Dataset):
         print(image_path.shape)
         image = image_path
         image = cv2.resize(image, dsize=(self.resize_shape[1], self.resize_shape[0]))
-
+        print(image.shape)
         do_aug_orig = torch.rand(1).numpy()[0] > 0.7
         if do_aug_orig:
             image = self.rot(image=image)
