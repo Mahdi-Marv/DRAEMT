@@ -20,38 +20,19 @@ class MVTecDRAEMTestDataset(Dataset):
         self.test_id = test_id
 
         if test_id == 1:
-            node0_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node0/test/normal/*')
-            node0_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node0/test/anomaly/*')
-
-            node1_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node1/test/normal/*')
-            node1_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node1/test/anomaly/*')
-
-            node2_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node2/test/normal/*')
-            node2_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node2/test/anomaly/*')
-
-            test_path_normal = node0_test_normal + node1_test_normal + node2_test_normal
-            test_path_normal = random.sample(test_path_normal, 2000)
-
-            test_path_anomaly = node0_test_anomaly + node1_test_anomaly + node2_test_anomaly
-            test_path_anomaly = random.sample(test_path_anomaly, 2000)
-
-            self.test_path = test_path_normal + test_path_anomaly
-            self.test_label = [0] * len(test_path_normal) + [1] * len(test_path_anomaly)
+            with open('./content/mnist_shifted_dataset/test_normal_main.pkl', 'rb') as f:
+                normal_test = pickle.load(f)
+            with open('./content/mnist_shifted_dataset/test_abnormal_main.pkl', 'rb') as f:
+                abnormal_test = pickle.load(f)
+            self.test_path = normal_test['images'] + abnormal_test['images']
+            self.test_label = [0] * len(normal_test['images']) + [1] * len(abnormal_test['images'])
         else:
-            node3_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node3/test/normal/*')
-            node3_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node3/test/anomaly/*')
-
-            node4_test_normal = glob.glob('/kaggle/input/camelyon17-clean/node4/test/normal/*')
-            node4_test_anomaly = glob.glob('/kaggle/input/camelyon17-clean/node4/test/anomaly/*')
-
-            shifted_test_path_normal = node3_test_normal + node4_test_normal
-            shifted_test_path_normal = random.sample(shifted_test_path_normal, 2000)
-
-            shifted_test_path_anomaly = node3_test_anomaly + node4_test_anomaly
-            shifted_test_path_anomaly = random.sample(shifted_test_path_anomaly, 2000)
-
-            self.test_path = shifted_test_path_normal + shifted_test_path_anomaly
-            self.test_label = [0] * len(shifted_test_path_normal) + [1] * len(shifted_test_path_anomaly)
+            with open('./content/mnist_shifted_dataset/test_normal_shifted.pkl', 'rb') as f:
+                normal_test = pickle.load(f)
+            with open('./content/mnist_shifted_dataset/test_abnormal_shifted.pkl', 'rb') as f:
+                abnormal_test = pickle.load(f)
+            self.test_path = normal_test['images'] + abnormal_test['images']
+            self.test_label = [0] * len(normal_test['images']) + [1] * len(abnormal_test['images'])
 
     def __len__(self):
         return len(self.test_path)
@@ -104,12 +85,12 @@ class MVTecDRAEMTrainDataset(Dataset):
 
         # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
 
-        node0_train = glob.glob('/kaggle/input/camelyon17-clean/node0/train/normal/*')
-        node1_train = glob.glob('/kaggle/input/camelyon17-clean/node1/train/normal/*')
-        node2_train = glob.glob('/kaggle/input/camelyon17-clean/node2/train/normal/*')
+        with open('./content/mnist_shifted_dataset/train_normal.pkl', 'rb') as f:
+            normal_train = pickle.load(f)
+        self.image_paths = normal_train['images']
 
-        self.image_paths = node0_train + node1_train + node2_train
-        self.image_paths = random.sample(self.image_paths, 5000)
+        # self.image_paths = node0_train + node1_train + node2_train
+        # self.image_paths = random.sample(self.image_paths, 5000)
 
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
