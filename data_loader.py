@@ -159,6 +159,7 @@ class MVTecDRAEMTrainDataset(Dataset):
             return augmented_image, msk, np.array([has_anomaly], dtype=np.float32)
 
     def transform_image(self, image_path, anomaly_source_path):
+        print(image_path.shape)
         image = image_path
         image = cv2.resize(image, dsize=(self.resize_shape[1], self.resize_shape[0]))
 
