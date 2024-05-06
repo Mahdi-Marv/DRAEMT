@@ -76,7 +76,7 @@ class MVTecDRAEMTestDataset(Dataset):
                     self.labels.append(all_paths[i][1])
 
     def __len__(self):
-        return len(self.test_path)
+        return len(self.image_paths)
 
     def transform_image(self, image_path, mask_path):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -102,7 +102,7 @@ class MVTecDRAEMTestDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_path = self.test_path[idx]
+        img_path = self.image_paths[idx]
         image, _ = self.transform_image(img_path, None)
 
         has_anomaly = np.array([0], dtype=np.float32) if self.labels[idx] == 0 else np.array([1], dtype=np.float32)
