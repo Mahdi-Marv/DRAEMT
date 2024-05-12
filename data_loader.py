@@ -11,6 +11,52 @@ import random
 import pandas as pd
 
 
+
+
+def get_cityscape_globs():
+    from glob import glob
+    import random
+    normal_path = glob('/kaggle/input/cityscapes-5-10-threshold/cityscapes/ID/*')
+    anomaly_path = glob('/kaggle/input/cityscapes-5-10-threshold/cityscapes/OOD/*')
+
+    random.seed(42)
+    random.shuffle(normal_path)
+    train_ratio = 0.7
+    separator = int(train_ratio * len(normal_path))
+    normal_path_train = normal_path[:separator]
+    normal_path_test = normal_path[separator:]
+
+    return normal_path_train, normal_path_test, anomaly_path
+
+def get_gta_globs():
+    from glob import glob
+    nums = [f'0{i}' for i in range(1, 10)] + ['10']
+    folder_paths = []
+    globs_id = []
+    globs_ood = []
+    for i in range(10):
+        id_path = f'/kaggle/input/gta5-15-5-{nums[i]}/gta5_{i}/gta5_{i}/ID/*'
+        ood_path = f'/kaggle/input/gta5-15-5-{nums[i]}/gta5_{i}/gta5_{i}/OOD/*'
+        globs_id.append(glob(id_path))
+        globs_ood.append(glob(ood_path))
+        print(i, len(globs_id[-1]), len(globs_ood[-1]))
+
+    glob_id = []
+    glob_ood = []
+    for i in range(len(globs_id)):
+        glob_id += globs_id[i]
+        glob_ood += globs_ood[i]
+
+    random.seed(42)
+    random.shuffle(glob_id)
+    train_ratio = 0.7
+    separator = int(train_ratio * len(glob_id))
+    glob_train_id = glob_id[:separator]
+    glob_test_id = glob_id[separator:]
+
+    return glob_train_id, glob_test_id, glob_ood
+
+
 class MVTecDRAEMTestDataset(Dataset):
 
     def __init__(self, root_dir, resize_shape=None, test_id=1):
@@ -19,23 +65,16 @@ class MVTecDRAEMTestDataset(Dataset):
         self.resize_shape = resize_shape
         self.test_id = test_id
 
-        test_normal_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/NORMAL/*')
-        test_anomaly_path = glob.glob('/kaggle/input/isic-task3-dataset/dataset/test/ABNORMAL/*')
+        normal_path_train, normal_path_test, anomaly_path = get_cityscape_globs()
 
-        self.test_path = test_normal_path + test_anomaly_path
-        self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
+        self.test_path = normal_path_test + anomaly_path
+        self.test_label = [0] * len(normal_path_test) + [1] * len(anomaly_path)
 
         if self.test_id == 2:
-            df = pd.read_csv('/kaggle/input/pad-ufes-20/PAD-UFES-20/metadata.csv')
+            glob_train_id, glob_test_id, glob_ood = get_gta_globs()
 
-            shifted_test_label = df["diagnostic"].to_numpy()
-            shifted_test_label = (shifted_test_label != "NEV")
-
-            shifted_test_path = df["img_id"].to_numpy()
-            shifted_test_path = '/kaggle/input/pad-ufes-20/PAD-UFES-20/Dataset/' + shifted_test_path
-
-            self.test_path = shifted_test_path
-            self.test_label = shifted_test_label
+            self.test_path = glob_test_id + glob_ood
+            self.test_label = [0] * len(glob_test_id) + [1] * len(glob_ood)
 
     def __len__(self):
         return len(self.test_path)
@@ -86,10 +125,9 @@ class MVTecDRAEMTrainDataset(Dataset):
         self.root_dir = root_dir
         self.resize_shape = resize_shape
 
-        # self.image_paths = sorted(glob.glob(root_dir+"/*.png"))
-
-        self.image_paths = glob.glob('/kaggle/input/isic-task3-dataset/dataset/train/NORMAL/*')
-
+        normal_paths, _, _ = get_cityscape_globs()
+        self.image_paths = normal_paths
+        
         self.anomaly_source_paths = sorted(glob.glob(anomaly_source_path + "/*/*.jpg"))
 
         self.augmenters = [iaa.GammaContrast((0.5, 2.0), per_channel=True),
